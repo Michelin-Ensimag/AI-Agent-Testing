@@ -1,0 +1,28 @@
+# --- Python Environment ---
+# Ignore the virtual environment folder
+venv/
+env/
+.venv/
+ENV/
+
+# --- Environment Variables ---
+# NEVER commit your actual API keys or secrets
+.env
+.flaskenv
+
+# --- Python Cache ---
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- IDEs and Editors ---
+# Visual Studio Code
+.vscode/
+# PyCharm / IntelliJ
+.idea/
+
+# --- Distribution / Packaging ---
+dist/
+build/
+*.egg-info/
