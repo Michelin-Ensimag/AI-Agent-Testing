@@ -4,6 +4,7 @@ venv/
 env/
 .venv/
 ENV/
+myenv/
 
 # --- Environment Variables ---
 # NEVER commit your actual API keys or secrets
