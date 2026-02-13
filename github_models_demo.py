@@ -1,3 +1,6 @@
+# Create an environment variable to set your token as the key for the client code:
+# export GITHUB_TOKEN="<your-github-token-goes-here>"
+
 import os
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
