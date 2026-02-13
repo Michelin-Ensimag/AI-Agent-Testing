@@ -1,6 +1,12 @@
-# We need to install bun : https://bun.com/docs/installation
-# Then login to your github account: bunx @jeffreycao/copilot-api@latest auth
-# Then launch the server: bunx @jeffreycao/copilot-api@latest start
+"""
+Setup instructions for using this script:
+
+1. Install Bun: https://bun.com/docs/installation
+2. Login to your GitHub account:
+   bunx @jeffreycao/copilot-api@latest auth
+3. Launch the server:
+   bunx @jeffreycao/copilot-api@latest start
+"""
 
 from openai import OpenAI
 
