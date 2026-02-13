@@ -1,0 +1,6 @@
+# Python libraries
+# For GitHub Models
+azure-ai-inference
+
+# For copilot_api
+openai
