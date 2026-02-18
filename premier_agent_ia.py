@@ -11,7 +11,8 @@ class AgentState(TypedDict):
     infos :str 
     summary : str 
 
-# Clé d'API pour NewsData.io qui permet de rechercher des articles d'actualité sur un sujet donné en quasi-temps réel.
+# Clé d'API pour NewsData.io qui permet de rechercher des articles d'actualité sur un sujet donné en quasi-temps réel. Vous pouvez vous inscrire sur le site de NewsData.io pour obtenir votre propre clé d'API gratuite.
+API_KEY = "***REMOVED***"
 
 # Initialisation du LLM 
 LLM = OllamaLLM(
