@@ -4,3 +4,7 @@ azure-ai-inference
 
 # For copilot_api
 openai
+
+# For premier_agent_ia
+langgraph
+langchain-ollama
