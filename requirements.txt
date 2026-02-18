@@ -8,3 +8,7 @@ openai
 # For premier_agent_ia
 langgraph
 langchain-ollama
+
+
+# For deuxieme_agent_ia.py and traduction_fr_eng.py
+requests
