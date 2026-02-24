@@ -20,13 +20,7 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
 
-# ── LLM ──
-llm = ChatOpenAI(
-    base_url="http://localhost:4141/v1",
-    api_key="dummy-key",
-    model="gpt-4.1",
-)
-
+# Configuration
 SYSTEM_MSG = (
     "You are a helpful stock market assistant. "
     "You have tools that return real data. "
@@ -37,7 +31,19 @@ SYSTEM_MSG = (
 MAX_ITERATIONS = 10
 
 
-async def run_agent():
+# LLM 
+def create_llm():
+    """Create and return configured ChatOpenAI instance."""
+    return ChatOpenAI(
+        base_url="http://localhost:4141/v1",
+        api_key="dummy-key",
+        model="gpt-4.1",
+    )
+
+
+# MCP 
+async def create_mcp_client():
+    """Start MCP server and retrieve available tools."""
     client = MultiServerMCPClient(
         {
             "stock": {
@@ -47,79 +53,95 @@ async def run_agent():
             }
         }
     )
+
     tools = await client.get_tools()
+    return client, tools
+
+
+# Agent Logic 
+async def run_agent_logic(question: str, llm, tools, max_iterations=MAX_ITERATIONS):
+
     tools_by_name = {t.name: t for t in tools}
-
-    print("\n── Available MCP tools ──")
-    for tool in tools:
-        print(f"  • {tool.name}: {tool.description[:65]}...")
-
-    # Bind tools to the LLM so it knows about them
     llm_with_tools = llm.bind_tools(tools)
 
-    print("\n── Agent ready. Examples: ──")
-    print("  1. What is the price of Apple (AAPL)?")
-    print("  2. Compare the price of LVMH (MC.PA) and Microsoft (MSFT).")
-    print("  3. What is the price of Apple (AAPL)? If I invest that amount for 10 years at 8%, how much will I have?")
-    print("  4. What is the price of Nvidia stock? Compare LVMH (MC.PA) and Microsoft (MSFT). What is Apple (AAPL)? If I invest that amount for 10 years at 8%, how much will I have?")
-    print()
-
-    try:
-        question = input("Your question: ")
-    except EOFError:
-        print("\n❌ No input (run in an interactive terminal).")
-        return
-
-    print("\n── Running... ──\n")
-
-    # Build the conversation
     messages = [
         SystemMessage(content=SYSTEM_MSG),
         HumanMessage(content=question),
     ]
 
-    try:
-        for i in range(MAX_ITERATIONS):
-            # Ask the LLM
-            response = await llm_with_tools.ainvoke(messages)
-            messages.append(response)
+    for _ in range(max_iterations):
+        response = await llm_with_tools.ainvoke(messages)
+        messages.append(response)
 
-            # If no tool calls, we have the final answer
-            if not response.tool_calls:
-                break
+        # If no tool calls → final answer
+        if not response.tool_calls:
+            return response.content
 
-            # Execute each tool call
-            for tool_call in response.tool_calls:
-                tool_name = tool_call["name"]
-                tool_args = tool_call["args"]
-                print(f"  [Calling tool: {tool_name}({tool_args})]")
+        # Execute tool calls
+        for tool_call in response.tool_calls:
+            tool_name = tool_call["name"]
+            tool_args = tool_call["args"]
 
-                tool = tools_by_name[tool_name]
-                result = await tool.ainvoke(tool_args)
+            tool = tools_by_name[tool_name]
+            result = await tool.ainvoke(tool_args)
 
-                # MCP returns content blocks like [{'type':'text','text':'...','id':'...'}]
-                # Convert to a plain string so the LLM can read it
-                if isinstance(result, list):
-                    parts = [
-                        block["text"] if isinstance(block, dict) and "text" in block
-                        else str(block)
-                        for block in result
-                    ]
-                    result = "\n".join(parts)
+            # Convert MCP content blocks to string
+            if isinstance(result, list):
+                result = "\n".join(
+                    block.get("text", str(block))
+                    if isinstance(block, dict)
+                    else str(block)
+                    for block in result
+                )
 
-                print(f"  [Result: {str(result)[:200]}]")
-
-                messages.append(ToolMessage(
+            messages.append(
+                ToolMessage(
                     content=str(result),
                     tool_call_id=tool_call["id"],
-                ))
+                )
+            )
 
-        print(f"\n── Final answer ──\n{response.content}")
+    return "Max iterations reached."
+
+
+# ─────────────────────────────────────────────
+# CLI Interface
+# ─────────────────────────────────────────────
+
+async def run_cli():
+    """Interactive CLI entrypoint."""
+
+    client, tools = await create_mcp_client()
+    llm = create_llm()
+
+    print("\n── Available MCP tools ──")
+    for tool in tools:
+        print(f"  • {tool.name}: {tool.description[:65]}...")
+
+    print("\n── Agent ready. Examples: ──")
+    print("  1. What is the price of Apple (AAPL)?")
+    print("  2. Compare the price of LVMH (MC.PA) and Microsoft (MSFT).")
+    print("  3. What is Apple (AAPL)? If I invest that amount for 10 years at 8%, how much will I have?")
+    print()
+
+    try:
+        question = input("Your question: ")
+    except EOFError:
+        print("\nNo input detected.")
+        return
+
+    print("\n── Running... ──\n")
+
+    try:
+        answer = await run_agent_logic(question, llm, tools)
+
+        print("\n── Final answer ──\n")
+        print(answer)
 
     except (httpx.ConnectError, openai.APIConnectionError):
-        print("\n❌ Could not connect to the Copilot proxy (http://localhost:4141).")
-        print("   Start the proxy first: bunx @jeffreycao/copilot-api@latest start")
+        print("\nCould not connect to Copilot proxy (http://localhost:4141).")
+        print("Start it with: bunx @jeffreycao/copilot-api@latest start")
 
 
 if __name__ == "__main__":
-    asyncio.run(run_agent())
+    asyncio.run(run_cli())

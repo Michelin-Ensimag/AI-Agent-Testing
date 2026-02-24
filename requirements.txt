@@ -20,3 +20,6 @@ langchain-openai
 langchain-core
 langchain-mcp-adapters
 yfinance
+
+# For tests
+pytest
