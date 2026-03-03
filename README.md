@@ -3,26 +3,27 @@
 Repository for the project "Tester les Agents IA"
 
 
-## Python Environment & Dependencies
+## Setup
 
-1. **Create and activate a virtual environment (recommended name: `myenv`):**
-	```bash
-	python3 -m venv myenv
-	source myenv/bin/activate
-	```
+**First time** — install [uv](https://docs.astral.sh/uv/) if you don't have it:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh  # restart terminal after
+```
 
-2. **Install dependencies:**
-	```bash
-	pip install -r requirements.txt
-	```
+**After every `git pull`:**
+```bash
+uv sync
+```
+```bash
+source .venv/bin/activate  # VSCode usually does this automatically
+```
 
-
-3. **Each time you add a new library, add it to `requirements.txt` so others can install it.**
-
-4. **Every time you use the project, activate the environment first:**
-	```bash
-	source myenv/bin/activate
-	```
+**Adding a package:**
+```bash
+uv add <package>       # normal dependency
+uv add --dev <package> # dev/test only (e.g. linters, pytest plugins)
+```
+Then commit `pyproject.toml` and `uv.lock`.
 
 ---
 Team:
