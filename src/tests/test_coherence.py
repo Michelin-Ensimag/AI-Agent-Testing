@@ -65,13 +65,13 @@ proxy_test_model = ProxyTestLLM()
 
 def test_correctness():
 
-    question = " C'est quoi Apple ?"
+    question = " What is Apple ?"
 
     actual = proxy_model.generate(question)
 
     correctness_metric = GEval(
         name="Coherence",
-        criteria=" Check if the actual output replies to the input , without additional informations. If there is additional informations the score must be 0. ", 
+        criteria=" Check if the actual output is concise and coherent to the input. ", 
         evaluation_params=[
             LLMTestCaseParams.ACTUAL_OUTPUT,
             LLMTestCaseParams.INPUT
