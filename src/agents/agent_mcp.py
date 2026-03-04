@@ -20,45 +20,14 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_mcp_adapters.tools import load_mcp_tools
-from langchain_core.tools import StructuredTool
+from copilot_proxy_utils import wrap_mcp_tool
+
+# Set to False to pass raw MCP content blocks through (e.g. when not using the Copilot proxy).
+FLATTEN_MCP_OUTPUT = True
 
 YELLOW = "\033[33m"
 GREEN  = "\033[32m"
 RESET  = "\033[0m"
-
-
-# MCP tools return [{"type":"text","text":"..."}] instead of plain strings.
-# The copilot proxy can't handle that, so we unwrap it here.
-# Set to False to pass raw MCP output through.
-FLATTEN_MCP_OUTPUT = True
-
-
-def _flatten(result):
-    if isinstance(result, list):
-        return "\n".join(
-            b["text"] if isinstance(b, dict) and "text" in b else str(b)
-            for b in result
-        )
-    return str(result)
-
-
-def _wrap_tool(tool):
-    orig = tool.coroutine or tool.func
-
-    if tool.coroutine:
-        async def _flat(**kw):
-            return _flatten(await orig(**kw))
-    else:
-        def _flat(**kw):
-            return _flatten(orig(**kw))
-
-    return StructuredTool.from_function(
-        func=_flat if not tool.coroutine else None,
-        coroutine=_flat if tool.coroutine else None,
-        name=tool.name,
-        description=tool.description,
-        args_schema=tool.args_schema,
-    )
 
 
 SYSTEM_PROMPT = (
@@ -102,7 +71,7 @@ async def open_mcp_sessions(stack: AsyncExitStack):
         session = await stack.enter_async_context(client.session(server_name))
         server_tools = await load_mcp_tools(session)
         if FLATTEN_MCP_OUTPUT:
-            server_tools = [_wrap_tool(t) for t in server_tools]
+            server_tools = [wrap_mcp_tool(t) for t in server_tools]
         tools.extend(server_tools)
     return tools
 
