@@ -1,6 +1,10 @@
 """
 agent_stock_mcp.py — LangChain agent with MCP tools + Copilot Proxy
 
+NOTE: This file uses a manual ReAct loop (hand-written LLM → tool → LLM cycle).
+It predates agent_mcp.py which uses the modern create_agent (LangGraph) API instead.
+Kept for reference / testing purposes.
+
 This file implements a simple ReAct-style agent loop:
   1. The user asks a stock-related question
   2. The LLM decides which MCP tool(s) to call (get_stock_price, calculate_growth)

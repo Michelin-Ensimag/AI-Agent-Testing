@@ -82,7 +82,7 @@ async def open_mcp_sessions(stack: AsyncExitStack):
     return tools
 
 
-async def run_agent(question: str, llm=None, tools=None, verbose=False):
+async def run_agent(question: str, llm=None, tools=None):
     """
     Run the agent on a single question.
 
@@ -95,34 +95,25 @@ async def run_agent(question: str, llm=None, tools=None, verbose=False):
     if tools is not None:
         agent = create_agent(model=llm, tools=tools, system_prompt=SYSTEM_PROMPT)
         result = await agent.ainvoke({"messages": [("user", question)]})
-        return _extract_answer(result, verbose=verbose)
+        return result["messages"][-1].content
 
     async with AsyncExitStack() as stack:
         mcp_tools = await open_mcp_sessions(stack)
         agent = create_agent(model=llm, tools=mcp_tools, system_prompt=SYSTEM_PROMPT)
         result = await agent.ainvoke({"messages": [("user", question)]})
-        return _extract_answer(result, verbose=verbose)
+        return result["messages"][-1].content
 
 
-def _extract_answer(result, verbose=False):
-    """Pull the final text out of the agent result. Optionally print tool usage."""
-    messages = result.get("messages", [])
-
-    if verbose:
-        print("\n── Tool usage ──")
-        for msg in messages:
-            if isinstance(msg, AIMessage) and msg.tool_calls:
-                for tc in msg.tool_calls:
-                    print(f"  {YELLOW}→{RESET} {tc['name']}({tc['args']})")
-            elif isinstance(msg, ToolMessage):
-                preview = msg.content if msg.content else "(empty)"
-                print(f"  {GREEN}←{RESET} {preview}")
-        print()
-
-    for msg in reversed(messages):
-        if isinstance(msg, AIMessage) and msg.content and not msg.tool_calls:
-            return msg.content
-    return "No answer produced."
+def _print_tool_trace(messages):
+    print("\n── Tool usage ──")
+    for msg in messages:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            for tc in msg.tool_calls:
+                print(f"  {YELLOW}→{RESET} {tc['name']}({tc['args']})")
+        elif isinstance(msg, ToolMessage):
+            preview = msg.content if msg.content else "(empty)"
+            print(f"  {GREEN}←{RESET} {preview}")
+    print()
 
 
 async def run_cli():
@@ -157,7 +148,9 @@ async def run_cli():
 
         try:
             result = await agent.ainvoke({"messages": [("user", question)]})
-            answer = _extract_answer(result, verbose=VERBOSE)
+            if VERBOSE:
+                _print_tool_trace(result["messages"])
+            answer = result["messages"][-1].content
             print("── Answer ──")
             print(answer)
         except (httpx.ConnectError, openai.APIConnectionError):
