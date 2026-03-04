@@ -6,13 +6,14 @@ MCP sessions are opened once with AsyncExitStack so the stdio
 servers stay alive for the whole session — no restart per tool call.
 
 Requires:
-  - mcp_server_stock.py  (get_stock_price, calculate_growth)
-  - mcp_server_utils.py  (wikipedia_search, get_weather, convert_units)
+  - mcp_servers/mcp_server_stock.py  (get_stock_price, calculate_growth)
+  - mcp_servers/mcp_server_utils.py  (wikipedia_search, get_weather, convert_units)
   - Copilot proxy at http://localhost:4141 (bunx @jeffreycao/copilot-api@latest start)
 """
 
 import asyncio
 from contextlib import AsyncExitStack
+from pathlib import Path
 import httpx
 import openai
 from langchain.agents import create_agent
@@ -24,6 +25,9 @@ from copilot_proxy_utils import wrap_mcp_tool
 
 # Set to False to pass raw MCP content blocks through (e.g. when not using the Copilot proxy).
 FLATTEN_MCP_OUTPUT = True
+
+# Set to True to print tool calls and responses during CLI runs.
+VERBOSE = True
 
 YELLOW = "\033[33m"
 GREEN  = "\033[32m"
@@ -39,15 +43,17 @@ SYSTEM_PROMPT = (
     "- Only produce a text response once you have all the data needed to fully answer the question."
 )
 
+_MCP_DIR = Path(__file__).parent.parent / "mcp_servers"
+
 MCP_SERVERS = {
     "stock": {
         "command": "python",
-        "args": ["mcp_server_stock.py"],
+        "args": [str(_MCP_DIR / "mcp_server_stock.py")],
         "transport": "stdio",
     },
     "utils": {
         "command": "python",
-        "args": ["mcp_server_utils.py"],
+        "args": [str(_MCP_DIR / "mcp_server_utils.py")],
         "transport": "stdio",
     },
 }
@@ -151,7 +157,7 @@ async def run_cli():
 
         try:
             result = await agent.ainvoke({"messages": [("user", question)]})
-            answer = _extract_answer(result, verbose=True)
+            answer = _extract_answer(result, verbose=VERBOSE)
             print("── Answer ──")
             print(answer)
         except (httpx.ConnectError, openai.APIConnectionError):

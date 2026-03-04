@@ -13,8 +13,8 @@ Requires:
 """
 
 import asyncio
-import os
 import httpx
+from pathlib import Path
 import openai
 from langchain_openai import ChatOpenAI
 from langchain_mcp_adapters.client import MultiServerMCPClient
@@ -46,14 +46,13 @@ def create_llm():
 async def create_mcp_client():
     """Start MCP server and retrieve available tools."""
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    server_path = os.path.join(current_dir, "mcp_server_stock.py")
+    server_path = Path(__file__).parent.parent / "mcp_servers" / "mcp_server_stock.py"
 
     client = MultiServerMCPClient(
         {
             "stock": {
                 "command": "python",
-                "args": [server_path],
+                "args": [str(server_path)],
                 "transport": "stdio",
             }
         }
