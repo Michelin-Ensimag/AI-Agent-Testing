@@ -1,5 +1,5 @@
 import pytest
-from agent_stock_mcp import run_cli
+from agents.agent_stock_mcp import run_cli
 
 @pytest.mark.asyncio
 async def test_cli_runs(monkeypatch):
