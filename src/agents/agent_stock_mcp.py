@@ -1,6 +1,10 @@
 """
 agent_stock_mcp.py — LangChain agent with MCP tools + Copilot Proxy
 
+NOTE: This file uses a manual ReAct loop (hand-written LLM → tool → LLM cycle).
+It predates agent_mcp.py which uses the modern create_agent (LangGraph) API instead.
+Kept for reference / testing purposes.
+
 This file implements a simple ReAct-style agent loop:
   1. The user asks a stock-related question
   2. The LLM decides which MCP tool(s) to call (get_stock_price, calculate_growth)
@@ -13,8 +17,8 @@ Requires:
 """
 
 import asyncio
-import os
 import httpx
+from pathlib import Path
 import openai
 from langchain_openai import ChatOpenAI
 from langchain_mcp_adapters.client import MultiServerMCPClient
@@ -46,14 +50,13 @@ def create_llm():
 async def create_mcp_client():
     """Start MCP server and retrieve available tools."""
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    server_path = os.path.join(current_dir, "mcp_server_stock.py")
+    server_path = Path(__file__).parent.parent / "mcp_servers" / "mcp_server_stock.py"
 
     client = MultiServerMCPClient(
         {
             "stock": {
                 "command": "python",
-                "args": [server_path],
+                "args": [str(server_path)],
                 "transport": "stdio",
             }
         }

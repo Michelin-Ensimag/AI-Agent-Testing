@@ -23,6 +23,10 @@ __pycache__/
 # PyCharm / IntelliJ
 .idea/
 
+# --- Test/Tool Artifacts ---
+**/.deepeval/
+**/.pytest_cache/
+
 # --- Distribution / Packaging ---
 dist/
 build/

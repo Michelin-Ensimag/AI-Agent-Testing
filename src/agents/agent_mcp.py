@@ -6,13 +6,14 @@ MCP sessions are opened once with AsyncExitStack so the stdio
 servers stay alive for the whole session — no restart per tool call.
 
 Requires:
-  - mcp_server_stock.py  (get_stock_price, calculate_growth)
-  - mcp_server_utils.py  (wikipedia_search, get_weather, convert_units)
+  - mcp_servers/mcp_server_stock.py  (get_stock_price, calculate_growth)
+  - mcp_servers/mcp_server_utils.py  (wikipedia_search, get_weather, convert_units)
   - Copilot proxy at http://localhost:4141 (bunx @jeffreycao/copilot-api@latest start)
 """
 
 import asyncio
 from contextlib import AsyncExitStack
+from pathlib import Path
 import httpx
 import openai
 from langchain.agents import create_agent
@@ -20,45 +21,17 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_mcp_adapters.tools import load_mcp_tools
-from langchain_core.tools import StructuredTool
+from copilot_proxy_utils import wrap_mcp_tool
+
+# Set to False to pass raw MCP content blocks through (e.g. when not using the Copilot proxy).
+FLATTEN_MCP_OUTPUT = True
+
+# Set to True to print tool calls and responses during CLI runs.
+VERBOSE = True
 
 YELLOW = "\033[33m"
 GREEN  = "\033[32m"
 RESET  = "\033[0m"
-
-
-# MCP tools return [{"type":"text","text":"..."}] instead of plain strings.
-# The copilot proxy can't handle that, so we unwrap it here.
-# Set to False to pass raw MCP output through.
-FLATTEN_MCP_OUTPUT = True
-
-
-def _flatten(result):
-    if isinstance(result, list):
-        return "\n".join(
-            b["text"] if isinstance(b, dict) and "text" in b else str(b)
-            for b in result
-        )
-    return str(result)
-
-
-def _wrap_tool(tool):
-    orig = tool.coroutine or tool.func
-
-    if tool.coroutine:
-        async def _flat(**kw):
-            return _flatten(await orig(**kw))
-    else:
-        def _flat(**kw):
-            return _flatten(orig(**kw))
-
-    return StructuredTool.from_function(
-        func=_flat if not tool.coroutine else None,
-        coroutine=_flat if tool.coroutine else None,
-        name=tool.name,
-        description=tool.description,
-        args_schema=tool.args_schema,
-    )
 
 
 SYSTEM_PROMPT = (
@@ -70,15 +43,17 @@ SYSTEM_PROMPT = (
     "- Only produce a text response once you have all the data needed to fully answer the question."
 )
 
+_MCP_DIR = Path(__file__).parent.parent / "mcp_servers"
+
 MCP_SERVERS = {
     "stock": {
         "command": "python",
-        "args": ["mcp_server_stock.py"],
+        "args": [str(_MCP_DIR / "mcp_server_stock.py")],
         "transport": "stdio",
     },
     "utils": {
         "command": "python",
-        "args": ["mcp_server_utils.py"],
+        "args": [str(_MCP_DIR / "mcp_server_utils.py")],
         "transport": "stdio",
     },
 }
@@ -102,12 +77,12 @@ async def open_mcp_sessions(stack: AsyncExitStack):
         session = await stack.enter_async_context(client.session(server_name))
         server_tools = await load_mcp_tools(session)
         if FLATTEN_MCP_OUTPUT:
-            server_tools = [_wrap_tool(t) for t in server_tools]
+            server_tools = [wrap_mcp_tool(t) for t in server_tools]
         tools.extend(server_tools)
     return tools
 
 
-async def run_agent(question: str, llm=None, tools=None, verbose=False):
+async def run_agent(question: str, llm=None, tools=None):
     """
     Run the agent on a single question.
 
@@ -120,34 +95,25 @@ async def run_agent(question: str, llm=None, tools=None, verbose=False):
     if tools is not None:
         agent = create_agent(model=llm, tools=tools, system_prompt=SYSTEM_PROMPT)
         result = await agent.ainvoke({"messages": [("user", question)]})
-        return _extract_answer(result, verbose=verbose)
+        return result["messages"][-1].content
 
     async with AsyncExitStack() as stack:
         mcp_tools = await open_mcp_sessions(stack)
         agent = create_agent(model=llm, tools=mcp_tools, system_prompt=SYSTEM_PROMPT)
         result = await agent.ainvoke({"messages": [("user", question)]})
-        return _extract_answer(result, verbose=verbose)
+        return result["messages"][-1].content
 
 
-def _extract_answer(result, verbose=False):
-    """Pull the final text out of the agent result. Optionally print tool usage."""
-    messages = result.get("messages", [])
-
-    if verbose:
-        print("\n── Tool usage ──")
-        for msg in messages:
-            if isinstance(msg, AIMessage) and msg.tool_calls:
-                for tc in msg.tool_calls:
-                    print(f"  {YELLOW}→{RESET} {tc['name']}({tc['args']})")
-            elif isinstance(msg, ToolMessage):
-                preview = msg.content if msg.content else "(empty)"
-                print(f"  {GREEN}←{RESET} {preview}")
-        print()
-
-    for msg in reversed(messages):
-        if isinstance(msg, AIMessage) and msg.content and not msg.tool_calls:
-            return msg.content
-    return "No answer produced."
+def _print_tool_trace(messages):
+    print("\n── Tool usage ──")
+    for msg in messages:
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            for tc in msg.tool_calls:
+                print(f"  {YELLOW}→{RESET} {tc['name']}({tc['args']})")
+        elif isinstance(msg, ToolMessage):
+            preview = msg.content if msg.content else "(empty)"
+            print(f"  {GREEN}←{RESET} {preview}")
+    print()
 
 
 async def run_cli():
@@ -182,7 +148,9 @@ async def run_cli():
 
         try:
             result = await agent.ainvoke({"messages": [("user", question)]})
-            answer = _extract_answer(result, verbose=True)
+            if VERBOSE:
+                _print_tool_trace(result["messages"])
+            answer = result["messages"][-1].content
             print("── Answer ──")
             print(answer)
         except (httpx.ConnectError, openai.APIConnectionError):
