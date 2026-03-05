@@ -1,16 +1,19 @@
 import asyncio
 
+from openai import OpenAI
+
 from deepeval import assert_test
 from deepeval import evaluate
 
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams 
-from deepeval.metrics import GEval 
-from openai import OpenAI
+from deepeval.metrics import GEval , TaskCompletionMetric
+
 from deepeval.models.base_model import DeepEvalBaseLLM
+from deepeval.dataset import EvaluationDataset, Golden
 
 import agents.agent_stock_mcp as agent
 
-# changer le modèle qu'utilise deepEval 
+# changer le modèle qu'utilise deepEval  
 class ProxyTestLLM(DeepEvalBaseLLM):
     def __init__(self):
         self.client = OpenAI(
@@ -59,19 +62,26 @@ class ProxyLLM(DeepEvalBaseLLM):
 proxy_model = ProxyLLM()
 
 
-# on peut baser notre LLM qui teste sur un  autre modèle plus intelligent , voir https://llm-stats.com/
+# On peut baser notre LLM qui teste sur un autre modèle plus intelligent , voir https://llm-stats.com/
 proxy_test_model = ProxyTestLLM()
 
 
-def test_correctness():
+def test_coherence():
 
-    question = " What is Apple ?"
+    # Prompt
+    question = " C'est quoi le prix d'Apple ? "
 
-    actual = proxy_model.generate(question)
+    # Dataset des tests E2E lancés
+    dataset = EvaluationDataset(goldens = [Golden(input=question)])
 
-    correctness_metric = GEval(
-        name="Coherence",
-        criteria=" Check if the actual output is concise and coherent to the input. ", 
+    # Cette métrique dans DeepEval agit comme un inspecteur de travaux finis. Elle ne se laisse pas charmer par le beau langage. Elle vérifie si les "cases" de l'input ont été cochées.
+    task_completion_metric = TaskCompletionMetric(threshold = 0.5, model=proxy_test_model)
+
+
+    # Jugement qualitatif de l'output  
+    coherence_metric = GEval(
+        name="Cohérence",
+        criteria=" Vérifie si la réponse est polie et cohérente.", 
         evaluation_params=[
             LLMTestCaseParams.ACTUAL_OUTPUT,
             LLMTestCaseParams.INPUT
@@ -80,9 +90,16 @@ def test_correctness():
         model = proxy_test_model
     )
 
-    test_case_1 = LLMTestCase(
-        input= question, 
-        actual_output=actual
-    )
+    # Premier cas de test
+    test_cases = []
 
-    evaluate(test_cases=[test_case_1], metrics=[correctness_metric])
+    for golden in dataset.goldens:
+
+        actual = proxy_model.generate(golden.input)
+        test_case = LLMTestCase(
+            input= golden.input, 
+            actual_output=actual
+        )
+        test_cases.append(test_case)
+
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric,coherence_metric])
