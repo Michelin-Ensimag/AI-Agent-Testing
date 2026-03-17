@@ -19,7 +19,7 @@ mcp = FastMCP("Strategie Prediction Server")
 
 # Tool : Fetch market data
 @mcp.tool()
-def get_market_data(ticker: str,interval: str = "1d" ,start_date: str = "2020-01-01", end_date: str = "2026-03-17") -> dict:
+def get_market_data(ticker: str,interval: str = "1d" ,start_date: str = "2024-01-01", end_date: str = "2026-03-17") -> dict:
     """
     Fetch historical OHLCV data using yfinance.
     
@@ -41,6 +41,13 @@ def get_market_data(ticker: str,interval: str = "1d" ,start_date: str = "2020-01
     """
     data = yf.download(ticker,start=start_date, end=end_date,interval=interval)
     data.dropna(inplace=True)
+    
+    if isinstance(data.columns, pd.MultiIndex):
+        data.columns = data.columns.get_level_values(0)
+    
+    # Convertir l'index datetime en string pour la sérialisation JSON
+    data.index = data.index.astype(str)
+    
     return data.to_dict(orient="list")
 
 
@@ -60,8 +67,14 @@ def compute_indicators(ohlcv: dict) -> dict:
     Returns:
         Updated dict with added indicators
     """
+    
+    if not ohlcv:
+        return {"error": "ohlcv data missing. Call get_market_data first."}
+    
     df = pd.DataFrame(ohlcv)
     
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
     # SMA and EMA
     df['SMA20'] = df['Close'].rolling(20).mean()
     df['SMA50'] = df['Close'].rolling(50).mean()
@@ -112,6 +125,29 @@ def risk_analysis(ohlcv: dict) -> dict:
         "volatility": round(volatility, 4)
     }
 
+@mcp.tool()
+def analyze_stock(ticker: str, interval: str = "1d",
+                  start_date: str = "2024-01-01", 
+                  end_date: str = "2026-03-17") -> dict:
+    """
+    Fetch market data AND compute indicators for a given ticker.
+    Returns OHLCV + SMA, EMA, RSI, MACD ready for strategy generation.
+    
+    Args:
+        ticker: Stock symbol, e.g. 'AAPL'
+        interval: '1d', '1wk', '1m'
+        start_date: YYYY-MM-DD
+        end_date: YYYY-MM-DD
+    """
+    # Étape 1 : fetch
+    ohlcv = get_market_data(ticker, interval, start_date, end_date)
+    
+    # Étape 2 : indicators
+    result = compute_indicators(ohlcv)
+    
+    # Étape 3 : ne retourner que les 50 dernières lignes (suffisant pour l'agent)
+    df = pd.DataFrame(result).tail(50)
+    return df.to_dict(orient="list")
 
 # Run MCP server
 if __name__ == "__main__":
