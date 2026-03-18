@@ -36,8 +36,9 @@ SYSTEM_MSG = (
     "3. Use the results to generate a trading strategy.\n\n"
 
     "When analyzing indicators:\n"
-    "- SMA20 > SMA50 indicates bullish trend\n"
-    "- SMA20 < SMA50 indicates bearish trend\n"
+    " SMA TREND:"
+    " If SMA20 is numerically GREATER than SMA50 (SMA20 > SMA50), it is BULLISH."
+    " If SMA20 is numerically LOWER than SMA50 (SMA20 < SMA50), it is BEARISH."
     "- RSI > 70 means overbought\n"
     "- RSI < 30 means oversold\n"
     "- MACD crossing above signal indicates buy momentum\n"
@@ -50,6 +51,7 @@ SYSTEM_MSG = (
     "4. Suggested stop loss\n"
     "5. Suggested take profit\n"
 )
+
 
 MAX_ITERATIONS = 10
 
