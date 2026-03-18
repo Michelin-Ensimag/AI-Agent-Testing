@@ -23,7 +23,6 @@ from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
 date = "2024-01-03"
 
-
 SYSTEM_MSG = (
     "We are the "+date+
     "You are a quantitative trading assistant. "
@@ -50,6 +49,8 @@ SYSTEM_MSG = (
     "4. Suggested stop loss\n"
     "5. Suggested take profit\n"
 )
+
+    
 
 MAX_ITERATIONS = 10
 
@@ -83,9 +84,12 @@ async def create_mcp_client():
 
 
 async def run_agent_logic(question, llm, tools, max_iterations=MAX_ITERATIONS):
-    
-    tools_by_name = {t.name: t for t in tools}
-    llm_with_tools = llm.bind_tools(tools)
+
+    allowed_tools = ["get_market_data"]
+    filtered_tools = [ t for t in tools if t.name in allowed_tools ]
+
+    tools_by_name = {t.name: t for t in filtered_tools}
+    llm_with_tools = llm.bind_tools(filtered_tools)
     messages = [
         SystemMessage(content=SYSTEM_MSG),
         HumanMessage(content=question),
