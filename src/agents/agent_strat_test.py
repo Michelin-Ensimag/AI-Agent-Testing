@@ -25,7 +25,7 @@ date = "2024-01-03"
 
 SYSTEM_MSG = (
     "You are an expert quantitative trading evaluator.\n"
-    "Your role is NOT to generate a strategy, but to EVALUATE the logic and quality of a given one.\n\n"
+    "Your role is NOT to generate a strategy, but to EVALUATE the logic and quality of a given strategy using only information available up to "+date+"\n\n"
 
     " CRITICAL DATA HANDLING RULES !!:\n"
     "- The strategy agent is equipped with live data tools. TREAT ALL NUMBERS mentioned (RSI, SMA, MACD prices) as ABSOLUTE FACTS retrieved from tools.\n"
@@ -68,7 +68,7 @@ def create_llm():
     return ChatOpenAI(
         base_url="http://localhost:4141/v1",
         api_key="dummy-key",
-        model="gpt-5.2",
+        model="gpt-4.1",
     )
 
 
