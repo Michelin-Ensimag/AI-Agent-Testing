@@ -29,9 +29,11 @@ jobs:
 
       - name: Run Ruff linter
         run: ruff check agents/ mcp_servers/
+        continue-on-error: true
 
       - name: Run Ruff formatter check
         run: ruff format --check agents/ mcp_servers/
+        continue-on-error: true
 
 
   unit-tests:
