@@ -83,7 +83,7 @@ jobs:
         run: uv sync
 
       - name: Run DeepEval tests
-        run: uv run deepeval test run tests/test_coherence.py -v
+        run: uv run deepeval test run tests/test_agent_answers.py -v
         # Continue même si les tests échouent pour pouvoir uploader le rapport
         continue-on-error: true
 
