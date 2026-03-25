@@ -1,0 +1,355 @@
+"""
+test_agent_pred_prompt.py — Tests deepeval for trading with different prompts 
+run it with :
+    deepeval test run src/tests/test_agent_pred_prompt.py
+"""
+
+import asyncio
+from pathlib import Path
+
+from langchain_openai import ChatOpenAI
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_mcp_adapters.tools import load_mcp_tools
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+
+from deepeval import evaluate
+from deepeval.test_case import LLMTestCase, LLMTestCaseParams
+from deepeval.metrics import GEval, TaskCompletionMetric
+from deepeval.models.base_model import DeepEvalBaseLLM
+from deepeval.dataset import EvaluationDataset, Golden
+
+
+
+#  Configuration
+DATE = "2024-01-03"
+MAX_ITERATIONS = 10
+MCP_SERVER_PATH = Path(__file__).parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+
+
+ 
+#  System prompts
+STRATEGY_SYSTEM_EN = (
+    f"We are the {DATE}. "
+    "You are a quantitative trading assistant. "
+    "You have access to tools that retrieve market data and compute indicators. "
+    "Use the tools to analyze the stock and generate a trading strategy.\n\n"
+    "To analyze a stock:\n"
+    "1. Call analyze_stock(ticker) — this fetches data AND computes all indicators.\n"
+    "2. Optionally call risk_analysis with the raw OHLCV if needed.\n"
+    "3. Use the results to generate a trading strategy.\n\n"
+    "When analyzing indicators:\n"
+    " SMA TREND: If SMA20 > SMA50, it is BULLISH. If SMA20 < SMA50, it is BEARISH.\n"
+    "- RSI > 70 means overbought\n"
+    "- RSI < 30 means oversold\n"
+    "- MACD crossing above signal indicates buy momentum\n"
+    "- MACD crossing below signal indicates sell momentum\n\n"
+    "Your final answer must contain:\n"
+    "1. Trend analysis\n"
+    "2. Indicator interpretation\n"
+    "3. Trading decision (BUY / SELL / HOLD)\n"
+    "4. Suggested stop loss\n"
+    "5. Suggested take profit\n"
+)
+
+STRATEGY_SYSTEM_FR = (
+    f"Nous sommes le {DATE}. "
+    "Tu es un assistant de trading quantitatif. "
+    "Tu as accès à des outils pour récupérer des données de marché et calculer des indicateurs. "
+    "Utilise ces outils pour analyser l'action et générer une stratégie de trading.\n\n"
+    "Pour analyser une action :\n"
+    "1. Appelle analyze_stock(ticker) — cela récupère les données ET calcule tous les indicateurs.\n"
+    "2. Appelle optionnellement risk_analysis avec les données OHLCV brutes si nécessaire.\n"
+    "3. Utilise les résultats pour générer une stratégie de trading.\n\n"
+    "Lors de l'analyse des indicateurs :\n"
+    " TENDANCE SMA : Si SMA20 > SMA50, c'est HAUSSIER. Si SMA20 < SMA50, c'est BAISSIER.\n"
+    "- RSI > 70 signifie suracheté\n"
+    "- RSI < 30 signifie survendu\n"
+    "- MACD croisant à la hausse le signal indique une dynamique d'achat\n"
+    "- MACD croisant à la baisse le signal indique une dynamique de vente\n\n"
+    "Ta réponse finale doit contenir :\n"
+    "1. Analyse de tendance\n"
+    "2. Interprétation des indicateurs\n"
+    "3. Décision de trading (ACHETER / VENDRE / CONSERVER)\n"
+    "4. Stop loss suggéré\n"
+    "5. Take profit suggéré\n"
+)
+
+EVALUATOR_SYSTEM = (
+    "You are an expert quantitative trading evaluator.\n"
+    f"Your role is NOT to generate a strategy, but to EVALUATE the logic and quality of a given strategy using only information available up to {DATE}\n\n"
+    "CRITICAL DATA HANDLING RULES:\n"
+    "- TREAT ALL NUMBERS mentioned (RSI, SMA, MACD prices) as ABSOLUTE FACTS retrieved from tools.\n"
+    "- DO NOT fail or penalize a strategy because you don't see the raw data in your initial prompt.\n"
+    "- NEVER mark a strategy as 'ungrounded' if it cites specific technical values.\n\n"
+    "Evaluation criteria:\n"
+    "- LOGICAL CONSISTENCY: Does the decision (BUY/SELL/HOLD) actually match the stated indicators?\n"
+    "- INDICATOR INTERPRETATION: Are technical levels correctly understood?\n"
+    "- RISK MANAGEMENT: Are stop loss and take profit levels realistic?\n"
+    "- COHERENCE: Is the reasoning free of internal contradictions?\n\n"
+    "If the Input is a simple user question without numeric data, judge the decision based ONLY on the numbers "
+    "the agent claims to have found. Assume the agent's numbers are the ground truth for this evaluation.\n\n"
+    "Tool Usage:\n"
+    "- Use 'get_market_data' ONLY if you suspect a gross mathematical impossibility.\n\n"
+    "Output format:\n"
+    "1. Summary of the evaluated strategy\n"
+    "2. Strengths (Focus on logic)\n"
+    "3. Weaknesses (Focus on flaws in reasoning or risk)\n"
+    "4. Final judgment: GOOD / AVERAGE / BAD\n"
+    "5. Short justification\n\n"
+    "Be strict, objective, and critical. A good strategy must be logically bulletproof."
+)
+
+
+# Creating LLM 
+def create_llm() -> ChatOpenAI:
+    return ChatOpenAI(
+        base_url="http://localhost:4141/v1",
+        api_key="dummy-key",
+        model="gpt-4.1",
+    )
+
+
+# Agent loop 
+async def run_agent(
+    question: str,
+    system_prompt: str,
+    allowed_tool_names: list | None = None,
+    max_iterations: int = MAX_ITERATIONS,
+) -> str:
+    """
+    langchain-mcp-adapters >= 0.1.0 : plus de `async with client`.
+    On utilise client.session(server_name) pour garder la connexion ouverte.
+    """
+    llm = create_llm()
+
+    client = MultiServerMCPClient(
+        {
+            "stock": {
+                "command": "python",
+                "args": [str(MCP_SERVER_PATH)],
+                "transport": "stdio",
+            }
+        }
+    )
+
+    
+    async with client.session("stock") as session:
+        tools = await load_mcp_tools(session)
+
+        if allowed_tool_names:
+            tools = [t for t in tools if t.name in allowed_tool_names]
+
+        tools_by_name = {t.name: t for t in tools}
+        llm_with_tools = llm.bind_tools(tools)
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=question),
+        ]
+
+        for _ in range(max_iterations):
+            response = await llm_with_tools.ainvoke(messages)
+            messages.append(response)
+
+            if not response.tool_calls:
+                return response.content
+
+            for tool_call in response.tool_calls:
+                tool = tools_by_name.get(tool_call["name"])
+                if tool is None:
+                    continue
+                result = await tool.ainvoke(tool_call["args"])
+                if isinstance(result, list):
+                    result = "\n".join(
+                        block.get("text", str(block)) if isinstance(block, dict) else str(block)
+                        for block in result
+                    )
+                messages.append(
+                    ToolMessage(content=str(result), tool_call_id=tool_call["id"])
+                )
+
+    return "Max iterations reached."
+
+
+
+#  Proxy models
+class ProxyLLM(DeepEvalBaseLLM):
+    """Agent stratégie — utilise tous les outils MCP."""
+
+    def __init__(self, system_prompt: str = STRATEGY_SYSTEM_EN):
+        self.system_prompt = system_prompt
+
+    def load_model(self):
+        return None
+
+    def generate(self, prompt: str) -> str:
+        return asyncio.run(self.a_generate(prompt))
+
+    async def a_generate(self, prompt: str) -> str:
+        return await run_agent(prompt, self.system_prompt)
+
+    def get_model_name(self) -> str:
+        return "proxy-gpt-4.1"
+
+
+class ProxyTestLLM(DeepEvalBaseLLM):
+    """Agent évaluateur — accès à get_market_data uniquement."""
+
+    def load_model(self):
+        return None
+
+    def generate(self, prompt: str) -> str:
+        return asyncio.run(self.a_generate(prompt))
+
+    async def a_generate(self, prompt: str) -> str:
+        return await run_agent(
+            prompt,
+            EVALUATOR_SYSTEM,
+            allowed_tool_names=["get_market_data"],
+        )
+
+    def get_model_name(self) -> str:
+        return "proxy-test-gpt-4.1"
+
+
+# Instances partagées entre tous les tests
+proxy_model      = ProxyLLM()
+proxy_test_model = ProxyTestLLM()
+
+
+
+#  Shared metrics
+task_completion_metric = TaskCompletionMetric(
+    threshold=0.5,
+    model=proxy_test_model,
+)
+
+strategy_metric = GEval(
+    name="strategy",
+    criteria=(
+        "Assess the quality of the trading strategy based on financial correctness and reasoning quality.\n\n"
+        "The evaluation must verify:\n"
+        "- No contradiction between indicators and conclusions\n"
+        "- Correct interpretation of SMA, RSI, and MACD signals\n"
+        "- A justified BUY, SELL, or HOLD decision\n"
+        "- Realistic and risk-aware stop loss and take profit levels\n"
+        "- Clear and structured reasoning\n\n"
+        "Penalize heavily if:\n"
+        "- Indicators are misinterpreted\n"
+        "- The decision is not supported by data\n"
+        "- The reasoning is vague or generic\n"
+        "- Risk management is missing or unrealistic\n"
+    ),
+    evaluation_params=[
+        LLMTestCaseParams.ACTUAL_OUTPUT,
+        LLMTestCaseParams.INPUT,
+    ],
+    threshold=0.5,
+    model=proxy_test_model,
+)
+
+def build_test_cases(dataset: EvaluationDataset, proxy: ProxyLLM) -> list[LLMTestCase]:
+    test_cases = []
+    for golden in dataset.goldens:
+        actual = proxy.generate(golden.input)
+        test_cases.append(LLMTestCase(input=golden.input, actual_output=actual))
+    return test_cases
+
+
+
+#  Tests
+def test_lang_en_minimal():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input="Analyze Apple (AAPL) and give me a trading strategy."),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_lang_fr_minimal():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input="Analyse Apple (AAPL) et donne-moi une stratégie de trading."),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_en_detailed():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input=(
+            "I am a retail investor with a medium risk tolerance. "
+            "Please analyze Apple Inc. (AAPL) using the available technical indicators. "
+            "I would like you to fetch the latest market data, compute SMA, EMA, RSI and MACD, "
+            "then provide a clear BUY, SELL or HOLD recommendation. "
+            "Please also specify a stop loss level and a take profit target. "
+            "Make sure the strategy accounts for the current trend direction."
+        )),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_fr_detailed():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input=(
+            "Je suis un investisseur particulier avec une tolérance au risque modérée. "
+            "Analyse Apple Inc. (AAPL) à l'aide des indicateurs techniques disponibles. "
+            "Récupère les dernières données de marché, calcule les SMA, EMA, RSI et MACD, "
+            "puis fournis une recommandation claire ACHETER, VENDRE ou CONSERVER. "
+            "Précise également un niveau de stop loss et un objectif de take profit. "
+            "Assure-toi que la stratégie tient compte de la direction actuelle de la tendance."
+        )),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_en_typos():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input="anlyze aple (AAPL) stok and giv me a trding strategey plz"),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_fr_typos():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input="analise aple (AAPL) et done moi une straategie de tradding stp"),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_en_tsla():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input="Generate a trading strategy for Tesla (TSLA)."),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_fr_msft_detailed():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input=(
+            "Analyse Microsoft (MSFT) en détail. "
+            "Utilise les indicateurs RSI, MACD et les moyennes mobiles. "
+            "Dis-moi si je dois acheter, vendre ou conserver l'action avec un stop loss précis."
+        )),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_en_ambiguous():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input="Should I buy or sell something in tech?"),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_en_no_ticker():
+    dataset = EvaluationDataset(goldens=[
+        Golden(input="What is the best trading strategy right now?"),
+    ])
+    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
