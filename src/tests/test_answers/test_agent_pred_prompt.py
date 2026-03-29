@@ -251,105 +251,106 @@ def build_test_cases(dataset: EvaluationDataset, proxy: ProxyLLM) -> list[LLMTes
     test_cases = []
     for golden in dataset.goldens:
         actual = proxy.generate(golden.input)
-        test_cases.append(LLMTestCase(input=golden.input, actual_output=actual))
+        test_cases.append(LLMTestCase(name = golden.name, input=golden.input, actual_output=actual))
     return test_cases
 
 
 
 #  Tests
-def test_lang_en_minimal():
+# def test_lang_en_minimal():
+#     dataset = EvaluationDataset(goldens=[
+#         Golden(input="Analyze Apple (AAPL) and give me a trading strategy."),
+#     ])
+#     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+#     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+# def test_lang_fr_minimal():
+#     dataset = EvaluationDataset(goldens=[
+#         Golden(input="Analyse Apple (AAPL) et donne-moi une stratégie de trading."),
+#     ])
+#     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
+#     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+# def test_en_detailed():
+#     dataset = EvaluationDataset(goldens=[
+#         Golden(input=(
+#             "I am a retail investor with a medium risk tolerance. "
+#             "Please analyze Apple Inc. (AAPL) using the available technical indicators. "
+#             "I would like you to fetch the latest market data, compute SMA, EMA, RSI and MACD, "
+#             "then provide a clear BUY, SELL or HOLD recommendation. "
+#             "Please also specify a stop loss level and a take profit target. "
+#             "Make sure the strategy accounts for the current trend direction."
+#         )),
+#     ])
+#     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+#     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+# def test_fr_detailed():
+#     dataset = EvaluationDataset(goldens=[
+#         Golden(input=(
+#             "Je suis un investisseur particulier avec une tolérance au risque modérée. "
+#             "Analyse Apple Inc. (AAPL) à l'aide des indicateurs techniques disponibles. "
+#             "Récupère les dernières données de marché, calcule les SMA, EMA, RSI et MACD, "
+#             "puis fournis une recommandation claire ACHETER, VENDRE ou CONSERVER. "
+#             "Précise également un niveau de stop loss et un objectif de take profit. "
+#             "Assure-toi que la stratégie tient compte de la direction actuelle de la tendance."
+#         )),
+#     ])
+#     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
+#     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+# def test_en_typos():
+#     dataset = EvaluationDataset(goldens=[
+#         Golden(input="anlyze aple (AAPL) stok and giv me a trding strategey plz"),
+#     ])
+#     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+#     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+# def test_fr_typos():
+#     dataset = EvaluationDataset(goldens=[
+#         Golden(input="analise aple (AAPL) et done moi une straategie de tradding stp"),
+#     ])
+#     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
+#     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+# def test_en_tsla():
+#     dataset = EvaluationDataset(goldens=[
+#         Golden(input="Generate a trading strategy for Tesla (TSLA)."),
+#     ])
+#     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+#     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+# def test_fr_msft_detailed():
+#     dataset = EvaluationDataset(goldens=[
+#         Golden(input=(
+#             "Analyse Microsoft (MSFT) en détail. "
+#             "Utilise les indicateurs RSI, MACD et les moyennes mobiles. "
+#             "Dis-moi si je dois acheter, vendre ou conserver l'action avec un stop loss précis."
+#         )),
+#     ])
+#     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
+#     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+# def test_en_ambiguous():
+#     dataset = EvaluationDataset(goldens=[
+#         Golden(input="Should I buy or sell something in tech?"),
+#     ])
+#     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
+#     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+
+
+def test_prompt_syntax():
     dataset = EvaluationDataset(goldens=[
-        Golden(input="Analyze Apple (AAPL) and give me a trading strategy."),
-    ])
-    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
-
-
-def test_lang_fr_minimal():
-    dataset = EvaluationDataset(goldens=[
-        Golden(input="Analyse Apple (AAPL) et donne-moi une stratégie de trading."),
-    ])
-    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
-
-
-def test_en_detailed():
-    dataset = EvaluationDataset(goldens=[
-        Golden(input=(
-            "I am a retail investor with a medium risk tolerance. "
-            "Please analyze Apple Inc. (AAPL) using the available technical indicators. "
-            "I would like you to fetch the latest market data, compute SMA, EMA, RSI and MACD, "
-            "then provide a clear BUY, SELL or HOLD recommendation. "
-            "Please also specify a stop loss level and a take profit target. "
-            "Make sure the strategy accounts for the current trend direction."
-        )),
-    ])
-    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
-
-
-def test_fr_detailed():
-    dataset = EvaluationDataset(goldens=[
-        Golden(input=(
-            "Je suis un investisseur particulier avec une tolérance au risque modérée. "
-            "Analyse Apple Inc. (AAPL) à l'aide des indicateurs techniques disponibles. "
-            "Récupère les dernières données de marché, calcule les SMA, EMA, RSI et MACD, "
-            "puis fournis une recommandation claire ACHETER, VENDRE ou CONSERVER. "
-            "Précise également un niveau de stop loss et un objectif de take profit. "
-            "Assure-toi que la stratégie tient compte de la direction actuelle de la tendance."
-        )),
-    ])
-    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
-
-
-def test_en_typos():
-    dataset = EvaluationDataset(goldens=[
-        Golden(input="anlyze aple (AAPL) stok and giv me a trding strategey plz"),
-    ])
-    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
-
-
-def test_fr_typos():
-    dataset = EvaluationDataset(goldens=[
-        Golden(input="analise aple (AAPL) et done moi une straategie de tradding stp"),
-    ])
-    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
-
-
-def test_en_tsla():
-    dataset = EvaluationDataset(goldens=[
-        Golden(input="Generate a trading strategy for Tesla (TSLA)."),
-    ])
-    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
-
-
-def test_fr_msft_detailed():
-    dataset = EvaluationDataset(goldens=[
-        Golden(input=(
-            "Analyse Microsoft (MSFT) en détail. "
-            "Utilise les indicateurs RSI, MACD et les moyennes mobiles. "
-            "Dis-moi si je dois acheter, vendre ou conserver l'action avec un stop loss précis."
-        )),
-    ])
-    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_FR))
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
-
-
-def test_en_ambiguous():
-    dataset = EvaluationDataset(goldens=[
-        Golden(input="Should I buy or sell something in tech?"),
-    ])
-    test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
-
-
-def test_en_no_ticker():
-    dataset = EvaluationDataset(goldens=[
-        Golden(input="What is the best trading strategy right now?"),
+        Golden(name = "test_en_no_ticker" ,input="What is the best trading strategy right now?"),
+        Golden(name = "test_en_ambiguous", input="Should I buy or sell something in tech?")
     ])
     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])

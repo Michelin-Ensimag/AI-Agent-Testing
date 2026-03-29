@@ -19,7 +19,7 @@ mcp = FastMCP("Strategie Prediction Server")
 
 # Tool : Fetch market data
 @mcp.tool()
-def get_market_data(ticker: str,interval: str = "1d" ,start_date: str = "2024-01-01", end_date: str = "2026-03-17") -> dict:
+def get_market_data(ticker: str,interval: str = "1d" ,start_date: str = "2024-01-01", end_date: str = "2024-12-31") -> dict:
     """
     Fetch historical OHLCV data using yfinance.
     
@@ -79,6 +79,9 @@ def compute_indicators(ohlcv: dict) -> dict:
     df['SMA20'] = df['Close'].rolling(20).mean()
     df['SMA50'] = df['Close'].rolling(50).mean()
     df['EMA20'] = df['Close'].ewm(span=20, adjust=False).mean()
+
+    # SMA signal 
+    df['SMA_Signal'] = np.where(df['SMA20'] > df['SMA50'], 'Bullish', 'Bearish')
     
     # RSI
     delta = df['Close'].diff()
