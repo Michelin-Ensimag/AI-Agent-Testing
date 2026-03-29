@@ -61,7 +61,7 @@ def create_llm():
     return ChatOpenAI(
         base_url="http://localhost:4141/v1",
         api_key="dummy-key",
-        model="gpt-5.2",
+        model="gpt-4.1",
     )
 
 
