@@ -1,5 +1,5 @@
 import pytest 
-from mcp_servers.mcp_server_stock import get_stock_price, calculate_growth
+from mcp_servers.old_mcp_servers.mcp_server_stock import get_stock_price, calculate_growth
 
 def test_calculate_growth_basic():
     result = calculate_growth(
