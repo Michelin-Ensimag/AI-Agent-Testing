@@ -21,7 +21,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_mcp_adapters.tools import load_mcp_tools
-from copilot_proxy_utils import wrap_mcp_tool
+from agents.agents_demo.copilot_proxy_utils import wrap_mcp_tool
 
 # Set to False to pass raw MCP content blocks through (e.g. when not using the Copilot proxy).
 FLATTEN_MCP_OUTPUT = True

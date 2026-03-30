@@ -1,5 +1,5 @@
 import asyncio
-from agents.agent_stock_mcp import run_agent_logic
+from agents.agents_demo.agent_stock_mcp import run_agent_logic
 
 class testLLM:
     def bind_tools(self, tools):
