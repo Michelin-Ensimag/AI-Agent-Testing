@@ -108,38 +108,10 @@ def test_determinism():
     test_cases = []
 
     for golden in dataset.goldens:
+        # Pour tester la consistence du juge, il faut mettre le meme output pour chaque golden 
+        actual = proxy_model.generate(golden.input)
 
         for i in range (10):
-            # actual is the answer given by our prediction agent 
-            actual = """
-                        ── Final strategy ──
-
-                        Here is an analysis for AAPL as of today:
-
-                        1. Trend Analysis:
-                        - The short-term SMA20 (262.60) is slightly above the longer-term SMA50 (262.20), indicating a transition from a bearish to a mildly bullish trend.
-                        - The recent price action shows some recovery from oversold levels, but the uptrend is not strong.
-
-                        2. Indicator Interpretation:
-                        - RSI is currently at 23.69, which is in oversold territory (<30). This suggests a possible bounce or reversal higher.
-                        - MACD (-2.94) is below the signal (-1.47), indicating continued bearish momentum, but the gap has started to narrow compared to previous days, suggesting possible waning of negative momentum.
-                        - EMA20 (260.81) is very close to the current price, suggesting price is hovering near short-term average.
-
-                        3. Trading Decision:
-                        - Decision: HOLD (Possible Bounce, But Confirmation Needed)
-                        - The stock is oversold, which may present a rebound opportunity. However, the overall momentum is still bearish per MACD, and the upturn in SMA20 is very recent.
-
-                        4. Suggested Stop Loss:
-                        - Place a stop loss just below recent lows, e.g., $249.00.
-
-                        5. Suggested Take Profit:
-                        - Aim for a conservative bounce target around previous resistance or upper recent range, e.g., $263.00 – $265.00.
-
-                        Summary:
-                        The technicals show early signs of a possible recovery due to the oversold RSI and the SMA turning up, but strength is not confirmed yet.
-                        It’s better to wait for a stronger confirmation (e.g., MACD crossing above signal, price closing above SMA50) before buying aggressively.
-                        If you decide to buy for a short-term rebound, be cautious and use tight risk management.
-                    """
             test_case = LLMTestCase(
                 input= golden.input, 
                 actual_output=actual
