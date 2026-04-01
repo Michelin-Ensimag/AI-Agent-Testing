@@ -25,19 +25,24 @@ from deepeval.metrics.base_metric import BaseMetric
 from deepeval.models.base_model import DeepEvalBaseLLM
 
 
-# Configuration 
+# Configuration
 DATE = "2024-01-03"
-N_RUNS = 3 
+N_RUNS = 3
 MAX_ITERATIONS = 10
-MCP_SERVER_PATH = Path(__file__).parent.parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+MCP_SERVER_PATH = (
+    Path(__file__).parent.parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+)
 
 CONSISTENCY_SCENARIOS = [
-    ("aapl_minimal_en","Analyze Apple (AAPL) and give me a trading strategy.", "EN"),
-    ("tsla_minimal_en",  "Generate a trading strategy for Tesla (TSLA).","EN"),
-    ("msft_detailed_fr",
-     "Analyse Microsoft (MSFT) en détail. Utilise les indicateurs RSI, MACD "
-     "et les moyennes mobiles. Dis-moi si je dois acheter, vendre ou conserver "
-     "l'action avec un stop loss précis.", "FR"),
+    ("aapl_minimal_en", "Analyze Apple (AAPL) and give me a trading strategy.", "EN"),
+    ("tsla_minimal_en", "Generate a trading strategy for Tesla (TSLA).", "EN"),
+    (
+        "msft_detailed_fr",
+        "Analyse Microsoft (MSFT) en détail. Utilise les indicateurs RSI, MACD "
+        "et les moyennes mobiles. Dis-moi si je dois acheter, vendre ou conserver "
+        "l'action avec un stop loss précis.",
+        "FR",
+    ),
 ]
 
 
@@ -119,18 +124,29 @@ SYSTEM_PROMPTS = {"EN": STRATEGY_SYSTEM_EN, "FR": STRATEGY_SYSTEM_FR}
 
 # LLM
 def create_llm() -> ChatOpenAI:
-    return ChatOpenAI(base_url="http://localhost:4141/v1",api_key="dummy-key",
+    return ChatOpenAI(
+        base_url="http://localhost:4141/v1",
+        api_key="dummy-key",
         model="gpt-4.1",
     )
 
 
-# Agent loop 
-async def run_agent(question: str,system_prompt: str,
+# Agent loop
+async def run_agent(
+    question: str,
+    system_prompt: str,
     allowed_tool_names: list | None = None,
-    max_iterations: int = MAX_ITERATIONS,) -> str:
+    max_iterations: int = MAX_ITERATIONS,
+) -> str:
     llm = create_llm()
     client = MultiServerMCPClient(
-        {"stock": {"command": "python", "args": [str(MCP_SERVER_PATH)], "transport": "stdio"}}
+        {
+            "stock": {
+                "command": "python",
+                "args": [str(MCP_SERVER_PATH)],
+                "transport": "stdio",
+            }
+        }
     )
     async with client.session("stock") as session:
         tools = await load_mcp_tools(session)
@@ -138,7 +154,10 @@ async def run_agent(question: str,system_prompt: str,
             tools = [t for t in tools if t.name in allowed_tool_names]
         tools_by_name = {t.name: t for t in tools}
         llm_with_tools = llm.bind_tools(tools)
-        messages = [SystemMessage(content=system_prompt), HumanMessage(content=question)]
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=question),
+        ]
 
         for _ in range(max_iterations):
             response = await llm_with_tools.ainvoke(messages)
@@ -165,7 +184,8 @@ class ProxyLLM(DeepEvalBaseLLM):
     def __init__(self, system_prompt: str = STRATEGY_SYSTEM_EN):
         self.system_prompt = system_prompt
 
-    def load_model(self): return None
+    def load_model(self):
+        return None
 
     def generate(self, prompt: str) -> str:
         return asyncio.run(self.a_generate(prompt))
@@ -178,13 +198,16 @@ class ProxyLLM(DeepEvalBaseLLM):
 
 
 class ProxyTestLLM(DeepEvalBaseLLM):
-    def load_model(self): return None
+    def load_model(self):
+        return None
 
     def generate(self, prompt: str) -> str:
         return asyncio.run(self.a_generate(prompt))
 
     async def a_generate(self, prompt: str) -> str:
-        return await run_agent(prompt, EVALUATOR_SYSTEM, allowed_tool_names=["get_market_data"])
+        return await run_agent(
+            prompt, EVALUATOR_SYSTEM, allowed_tool_names=["get_market_data"]
+        )
 
     def get_model_name(self) -> str:
         return "proxy-test-gpt-4.1"
@@ -193,10 +216,11 @@ class ProxyTestLLM(DeepEvalBaseLLM):
 proxy_test_model = ProxyTestLLM()
 
 
-# Helper 
+# Helper
 _DECISION_PATTERN = re.compile(
     r"\b(BUY|SELL|HOLD|ACHETER|VENDRE|CONSERVER)\b", re.IGNORECASE
 )
+
 
 def extract_decision(text: str) -> str | None:
     """Return the last BUY/SELL/HOLD decision found in the text, normalised."""
@@ -208,7 +232,7 @@ def extract_decision(text: str) -> str | None:
     return _FR_TO_EN.get(last, last)
 
 
-# Custom metric : decision agreement rate 
+# Custom metric : decision agreement rate
 class DecisionConsistencyMetric(BaseMetric):
     """
     Mesure le taux d'accord sur la décision BUY/SELL/HOLD entre N runs.
@@ -255,7 +279,7 @@ class DecisionConsistencyMetric(BaseMetric):
         return self.success
 
 
-# GEval metric : cross-run coherence 
+# GEval metric : cross-run coherence
 # Évalue si les N outputs sont logiquement cohérents entre eux.
 cross_run_coherence_metric = GEval(
     name="Cross-run coherence",
@@ -280,7 +304,7 @@ cross_run_coherence_metric = GEval(
 )
 
 
-# Test case builder 
+# Test case builder
 def build_consistency_test_cases(
     scenario_name: str,
     question: str,
@@ -307,7 +331,9 @@ def build_consistency_test_cases(
         input=question,
         actual_output=Counter(
             d for d in (extract_decision(o) for o in outputs) if d
-        ).most_common(1)[0][0] if any(extract_decision(o) for o in outputs) else "UNKNOWN",
+        ).most_common(1)[0][0]
+        if any(extract_decision(o) for o in outputs)
+        else "UNKNOWN",
         context=outputs,
     )
 
@@ -321,7 +347,7 @@ def build_consistency_test_cases(
     return decision_tc, coherence_tc
 
 
-# Tests 
+# Tests
 def test_consistency():
     """
     Lance N_RUNS fois chaque scénario et évalue :

@@ -22,7 +22,7 @@ response = client.complete(
         SystemMessage("You are a helpful assistant. Today is 30 feb 2036."),
         UserMessage("What day is it?"),
     ],
-    model=model
+    model=model,
 )
 
 print(response.choices[0].message.content)

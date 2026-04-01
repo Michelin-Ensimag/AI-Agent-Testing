@@ -30,8 +30,8 @@ FLATTEN_MCP_OUTPUT = True
 VERBOSE = True
 
 YELLOW = "\033[33m"
-GREEN  = "\033[32m"
-RESET  = "\033[0m"
+GREEN = "\033[32m"
+RESET = "\033[0m"
 
 
 SYSTEM_PROMPT = (
@@ -64,8 +64,8 @@ def create_llm():
     return ChatOpenAI(
         base_url="http://localhost:4141/v1",
         api_key="dummy-key",
-        model="gpt-5.2", # Change model here
-        temperature=0
+        model="gpt-5.2",  # Change model here
+        temperature=0,
     )
 
 
@@ -132,8 +132,12 @@ async def run_cli():
         print("  1. Convert 212 Fahrenheit to Celsius.")
         print("  2. What is the current price of LVMH (MC.PA)?")
         print("  3. What is the weather in the city where the Eiffel Tower is located?")
-        print("  4. Get the price of AAPL, then calculate how much $5000 grows over 10 years at that % as annual rate.")
-        print("  5. Find where Airbus is headquartered, get the weather of their hq, get their stock price, calculate how much €1000 grows over 10 years at 8%, and convert 500 km to miles.")
+        print(
+            "  4. Get the price of AAPL, then calculate how much $5000 grows over 10 years at that % as annual rate."
+        )
+        print(
+            "  5. Find where Airbus is headquartered, get the weather of their hq, get their stock price, calculate how much €1000 grows over 10 years at 8%, and convert 500 km to miles."
+        )
         print()
 
         agent = create_agent(model=llm, tools=tools, system_prompt=SYSTEM_PROMPT)

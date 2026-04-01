@@ -23,7 +23,9 @@ from deepeval.test_case import LLMTestCaseParams
 # Configuration
 DATE = "2024-01-03"
 MAX_ITERATIONS = 10
-MCP_SERVER_PATH = Path(__file__).parent.parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+MCP_SERVER_PATH = (
+    Path(__file__).parent.parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+)
 
 
 STRATEGY_SYSTEM_EN = (
@@ -128,7 +130,6 @@ async def run_agent(
     )
 
     async with client.session("stock") as session:
-
         tools = await load_mcp_tools(session)
 
         if allowed_tool_names:
@@ -144,7 +145,6 @@ async def run_agent(
         ]
 
         for _ in range(max_iterations):
-
             response = await llm_with_tools.ainvoke(messages)
             messages.append(response)
 
@@ -152,7 +152,6 @@ async def run_agent(
                 return response.content
 
             for tool_call in response.tool_calls:
-
                 tool = tools_by_name.get(tool_call["name"])
                 if tool is None:
                     continue
@@ -179,7 +178,6 @@ async def run_agent(
 
 # Proxy models
 class ProxyLLM(DeepEvalBaseLLM):
-
     def __init__(self, system_prompt: str):
         self.system_prompt = system_prompt
 
@@ -197,7 +195,6 @@ class ProxyLLM(DeepEvalBaseLLM):
 
 
 class ProxyTestLLM(DeepEvalBaseLLM):
-
     def load_model(self):
         return None
 
@@ -241,9 +238,9 @@ strategy_metric = GEval(
         "- Risk management is missing or unrealistic\n"
     ),
     evaluation_params=[
-    LLMTestCaseParams.ACTUAL_OUTPUT,
-    LLMTestCaseParams.INPUT,
-],
+        LLMTestCaseParams.ACTUAL_OUTPUT,
+        LLMTestCaseParams.INPUT,
+    ],
     threshold=0.5,
     model=proxy_test_model,
 )
@@ -255,7 +252,6 @@ def build_test_cases(dataset: EvaluationDataset) -> list[LLMTestCase]:
     test_cases = []
 
     for golden in dataset.goldens:
-
         system_prompt = golden.additional_metadata["sys"]
 
         proxy = ProxyLLM(system_prompt)
@@ -304,12 +300,12 @@ def test_prompt_evaluation():
             Golden(
                 name="Fr Detailed",
                 input=(
-                "Je suis un investisseur particulier avec une tolérance au risque modérée. "
-                "Analyse Apple Inc. (AAPL) à l'aide des indicateurs techniques disponibles. "
-                "Récupère les dernières données de marché, calcule les SMA, EMA, RSI et MACD, "
-                "puis fournis une recommandation claire ACHETER, VENDRE ou CONSERVER. "
-                "Précise également un niveau de stop loss et un objectif de take profit. "
-                "Assure-toi que la stratégie tient compte de la direction actuelle de la tendance."
+                    "Je suis un investisseur particulier avec une tolérance au risque modérée. "
+                    "Analyse Apple Inc. (AAPL) à l'aide des indicateurs techniques disponibles. "
+                    "Récupère les dernières données de marché, calcule les SMA, EMA, RSI et MACD, "
+                    "puis fournis une recommandation claire ACHETER, VENDRE ou CONSERVER. "
+                    "Précise également un niveau de stop loss et un objectif de take profit. "
+                    "Assure-toi que la stratégie tient compte de la direction actuelle de la tendance."
                 ),
                 additional_metadata={"sys": STRATEGY_SYSTEM_FR},
             ),
@@ -331,11 +327,11 @@ def test_prompt_evaluation():
             Golden(
                 name="FR MSFT",
                 input=(
-                "Analyse Microsoft (MSFT) en détail. "
-                "Utilise les indicateurs RSI, MACD et les moyennes mobiles. "
-                "Dis-moi si je dois acheter, vendre ou conserver l'action avec un stop loss précis."
+                    "Analyse Microsoft (MSFT) en détail. "
+                    "Utilise les indicateurs RSI, MACD et les moyennes mobiles. "
+                    "Dis-moi si je dois acheter, vendre ou conserver l'action avec un stop loss précis."
                 ),
-            additional_metadata={"sys": STRATEGY_SYSTEM_FR},
+                additional_metadata={"sys": STRATEGY_SYSTEM_FR},
             ),
             Golden(
                 name="EN Ambiguous",
