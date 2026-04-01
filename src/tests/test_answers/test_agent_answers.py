@@ -70,7 +70,7 @@ proxy_test_model = ProxyTestLLM()
 def test_coherence():
 
     # Prompt
-    question = " Should I buy or not AAPL today ? "
+    question = "Le RSI d'AAPL approche de 75. Stratégiquement, est-ce un moment d'achat ou faut-il attendre une correction ?"
 
     # Dataset des tests E2E à lancer 
     dataset = EvaluationDataset(goldens = [Golden(input=question)])
@@ -92,20 +92,13 @@ def test_coherence():
     # )
 
     strategy_metric = GEval(
-        name="startegy",
+        name="Startegy",
        criteria = (
-    "Assess the quality of the trading strategy based on financial correctness and reasoning quality.\n\n"
-    "The evaluation must verify:\n"
-    "- No contradiction between indicators and conclusions\n"
-    "- Correct interpretation of SMA, RSI, and MACD signals\n"
-    "- A justified BUY, SELL, or HOLD decision\n"
-    "- Realistic and risk-aware stop loss and take profit levels\n"
-    "- Clear and structured reasoning\n\n"
-    "Penalize heavily if:\n"
-    "- Indicators are misinterpreted\n"
-    "- The decision is not supported by data\n"
-    "- The reasoning is vague or generic\n"
-    "- Risk management is missing or unrealistic\n"
+    "Evaluate if the financial decision (BUY/SELL/HOLD) is logically derived from the data provided.\n"
+    "1. For Technical analysis: Check if RSI/SMA/MACD signals are interpreted correctly.\n"
+    "2. For Strategic analysis (e.g., AI competition): Check if the competitive threat is quantified and linked to financial impact.\n"
+    "3. Logic: Ensure zero internal contradictions.\n"
+    "4. Actionability: Ensure clear stop-loss/take-profit for trades OR clear risk-mitigation for long-term views."
 ),
         evaluation_params=[
             LLMTestCaseParams.ACTUAL_OUTPUT,
