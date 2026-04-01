@@ -20,6 +20,17 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      # Ruff : Python Linter and Formatter (Checks)
+      - name: Install Ruff
+        run: uv tool install ruff
+
+      - name: Check code formatting
+        run: ruff format --check .
+
+      - name: Lint code
+        run: ruff check .
+      # End of Ruff Checks
+
       - name: Install dependencies
         run: uv sync
 
