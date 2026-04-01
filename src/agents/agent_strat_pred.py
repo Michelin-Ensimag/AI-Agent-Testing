@@ -25,16 +25,13 @@ date = "2024-01-03"
 
 
 SYSTEM_MSG = (
-    "We are the "+date+
-    "You are a quantitative trading assistant. "
+    "We are the " + date + "You are a quantitative trading assistant. "
     "You have access to tools that retrieve market data and compute indicators. "
     "Use the tools to analyze the stock and generate a trading strategy.\n\n"
-    
     "To analyze a stock:\n"
     "1. Call analyze_stock(ticker) — this fetches data AND computes all indicators.\n"
     "2. Optionally call risk_analysis with the raw OHLCV if needed.\n"
     "3. Use the results to generate a trading strategy.\n\n"
-
     "When analyzing indicators:\n"
     " SMA TREND:"
     " If SMA20 is numerically GREATER than SMA50 (SMA20 > SMA50), it is BULLISH."
@@ -43,7 +40,6 @@ SYSTEM_MSG = (
     "- RSI < 30 means oversold\n"
     "- MACD crossing above signal indicates buy momentum\n"
     "- MACD crossing below signal indicates sell momentum\n\n"
-    
     "Your final answer must contain:\n"
     "1. Trend analysis\n"
     "2. Indicator interpretation\n"
@@ -56,7 +52,7 @@ SYSTEM_MSG = (
 MAX_ITERATIONS = 10
 
 
-# LLM Creation 
+# LLM Creation
 def create_llm():
     return ChatOpenAI(
         base_url="http://localhost:4141/v1",
@@ -68,7 +64,9 @@ def create_llm():
 # MCP Client
 async def create_mcp_client():
 
-    server_path = Path(__file__).parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+    server_path = (
+        Path(__file__).parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+    )
     client = MultiServerMCPClient(
         {
             "stock": {
@@ -83,9 +81,8 @@ async def create_mcp_client():
     return client, tools
 
 
-
 async def run_agent_logic(question, llm, tools, max_iterations=MAX_ITERATIONS):
-    
+
     tools_by_name = {t.name: t for t in tools}
     llm_with_tools = llm.bind_tools(tools)
     messages = [
@@ -107,7 +104,7 @@ async def run_agent_logic(question, llm, tools, max_iterations=MAX_ITERATIONS):
             tool = tools_by_name[tool_name]
 
             result = await tool.ainvoke(tool_args)
-            
+
             if isinstance(result, list):
                 result = "\n".join(
                     block.get("text", str(block))
@@ -124,8 +121,6 @@ async def run_agent_logic(question, llm, tools, max_iterations=MAX_ITERATIONS):
             )
 
     return "Max iterations reached."
-
-
 
 
 async def run_cli():
@@ -154,14 +149,12 @@ async def run_cli():
     print("\n── Running agent... ──\n")
 
     try:
-
         answer = await run_agent_logic(question, llm, tools)
 
         print("\n── Final strategy ──\n")
         print(answer)
 
     except (httpx.ConnectError, openai.APIConnectionError):
-
         print("\nCould not connect to Copilot proxy (http://localhost:4141).")
         print("Start it with:")
         print("bunx @jeffreycao/copilot-api@latest start")

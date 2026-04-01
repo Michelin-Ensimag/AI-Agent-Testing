@@ -6,11 +6,9 @@ Aucun appel LLM réel — tout est mocké avec unittest.mock.
 """
 
 import pytest
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
-from langchain_core.messages import AIMessage, ToolMessage
-
+from langchain_core.messages import AIMessage
 
 
 def make_fake_tool(name: str, return_value: str = "fake_result"):
@@ -30,10 +28,7 @@ def make_ai_message(content: str = "", tool_calls: list = None):
     return msg
 
 
-
-
 class TestAgentStratPred:
-
     @pytest.mark.asyncio
     async def test_returns_content_when_no_tool_calls(self):
         """L'agent doit retourner le contenu direct si le LLM ne fait pas de tool call."""
@@ -56,11 +51,17 @@ class TestAgentStratPred:
         from agents.agent_strat_pred import run_agent_logic
 
         # Premier appel : LLM demande un tool call
-        tool_call = {"name": "analyze_stock", "args": {"ticker": "AAPL"}, "id": "call_001"}
+        tool_call = {
+            "name": "analyze_stock",
+            "args": {"ticker": "AAPL"},
+            "id": "call_001",
+        }
         first_response = make_ai_message(tool_calls=[tool_call])
 
         # Deuxième appel : LLM donne la réponse finale
-        final_response = make_ai_message(content="HOLD — MACD bearish crossover detected.")
+        final_response = make_ai_message(
+            content="HOLD — MACD bearish crossover detected."
+        )
 
         fake_llm = MagicMock()
         fake_llm.bind_tools = MagicMock(return_value=fake_llm)
@@ -80,7 +81,11 @@ class TestAgentStratPred:
         from agents.agent_strat_pred import run_agent_logic
 
         # LLM demande toujours un tool call → boucle infinie
-        tool_call = {"name": "analyze_stock", "args": {"ticker": "TSLA"}, "id": "call_loop"}
+        tool_call = {
+            "name": "analyze_stock",
+            "args": {"ticker": "TSLA"},
+            "id": "call_loop",
+        }
         looping_response = make_ai_message(tool_calls=[tool_call])
 
         fake_llm = MagicMock()
@@ -89,7 +94,9 @@ class TestAgentStratPred:
 
         tools = [make_fake_tool("analyze_stock")]
 
-        result = await run_agent_logic("Loop forever", fake_llm, tools, max_iterations=3)
+        result = await run_agent_logic(
+            "Loop forever", fake_llm, tools, max_iterations=3
+        )
 
         assert result == "Max iterations reached."
 
@@ -98,7 +105,11 @@ class TestAgentStratPred:
         """Si le tool retourne une liste de blocs, ils doivent être concaténés en string."""
         from agents.agent_strat_pred import run_agent_logic
 
-        tool_call = {"name": "analyze_stock", "args": {"ticker": "MSFT"}, "id": "call_002"}
+        tool_call = {
+            "name": "analyze_stock",
+            "args": {"ticker": "MSFT"},
+            "id": "call_002",
+        }
         first_response = make_ai_message(tool_calls=[tool_call])
         final_response = make_ai_message(content="SELL signal confirmed.")
 
@@ -115,16 +126,15 @@ class TestAgentStratPred:
         assert result == "SELL signal confirmed."
 
 
-
-
 class TestAgentStratTest:
-
     @pytest.mark.asyncio
     async def test_evaluator_only_uses_allowed_tools(self):
         """L'agent évaluateur ne doit utiliser que get_market_data, pas analyze_stock."""
         from agents.agent_strat_test import run_agent_logic
 
-        final_response = make_ai_message(content="GOOD — strategy is logically consistent.")
+        final_response = make_ai_message(
+            content="GOOD — strategy is logically consistent."
+        )
 
         fake_llm = MagicMock()
         fake_llm.bind_tools = MagicMock(return_value=fake_llm)
@@ -136,7 +146,9 @@ class TestAgentStratTest:
             make_fake_tool("get_market_data"),
         ]
 
-        await run_agent_logic("Evaluate this strategy: BUY AAPL RSI=28", fake_llm, tools)
+        await run_agent_logic(
+            "Evaluate this strategy: BUY AAPL RSI=28", fake_llm, tools
+        )
 
         # bind_tools ne doit avoir reçu que get_market_data
         bound_tools = fake_llm.bind_tools.call_args[0][0]
@@ -163,10 +175,7 @@ class TestAgentStratTest:
         assert result == judgment
 
 
-
-
 class TestCreateLLM:
-
     def test_create_llm_returns_chat_openai(self):
         """create_llm doit retourner une instance ChatOpenAI."""
         from langchain_openai import ChatOpenAI

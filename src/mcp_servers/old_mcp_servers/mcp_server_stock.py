@@ -34,7 +34,9 @@ def get_stock_price(ticker: str) -> dict:
 
     price = info.get("currentPrice") or info.get("regularMarketPrice")
     if price is None:
-        return {"error": f"Could not retrieve price for ticker '{ticker}'. Check the symbol."}
+        return {
+            "error": f"Could not retrieve price for ticker '{ticker}'. Check the symbol."
+        }
 
     return {
         "ticker": ticker.upper(),

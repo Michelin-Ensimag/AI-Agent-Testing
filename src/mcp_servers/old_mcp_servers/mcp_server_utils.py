@@ -28,14 +28,15 @@ def wikipedia_search(query: str) -> dict:
         Article title, a short summary, and the Wikipedia URL.
     """
     wiki = wikipediaapi.Wikipedia(
-        language="en",
-        user_agent="ai-agent-testing/1.0 (educational project)"
+        language="en", user_agent="ai-agent-testing/1.0 (educational project)"
     )
 
     page = wiki.page(query)
 
     if not page.exists():
-        return {"error": f"No Wikipedia article found for '{query}'. Try a different search term."}
+        return {
+            "error": f"No Wikipedia article found for '{query}'. Try a different search term."
+        }
 
     summary = page.summary[:600].rsplit(" ", 1)[0] + "..."  # clean word boundary
 
@@ -50,13 +51,27 @@ _GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 _WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
 _WMO_CODES = {
-    0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
-    45: "Fog", 48: "Depositing rime fog",
-    51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle",
-    61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain",
-    71: "Slight snow", 73: "Moderate snow", 75: "Heavy snow",
-    80: "Slight showers", 81: "Moderate showers", 82: "Violent showers",
-    95: "Thunderstorm", 96: "Thunderstorm with hail", 99: "Thunderstorm with heavy hail",
+    0: "Clear sky",
+    1: "Mainly clear",
+    2: "Partly cloudy",
+    3: "Overcast",
+    45: "Fog",
+    48: "Depositing rime fog",
+    51: "Light drizzle",
+    53: "Moderate drizzle",
+    55: "Dense drizzle",
+    61: "Slight rain",
+    63: "Moderate rain",
+    65: "Heavy rain",
+    71: "Slight snow",
+    73: "Moderate snow",
+    75: "Heavy snow",
+    80: "Slight showers",
+    81: "Moderate showers",
+    82: "Violent showers",
+    95: "Thunderstorm",
+    96: "Thunderstorm with hail",
+    99: "Thunderstorm with heavy hail",
 }
 
 
@@ -119,40 +134,40 @@ def get_weather(city: str) -> dict:
 # Temperature is handled separately since it needs offset logic, not just multiplication.
 _CONVERSIONS: dict[str, dict[str, float]] = {
     # Length - base: metre
-    "m":   {"category": "length", "factor": 1.0},
-    "km":  {"category": "length", "factor": 1000.0},
-    "cm":  {"category": "length", "factor": 0.01},
-    "mm":  {"category": "length", "factor": 0.001},
-    "mi":  {"category": "length", "factor": 1609.344},
+    "m": {"category": "length", "factor": 1.0},
+    "km": {"category": "length", "factor": 1000.0},
+    "cm": {"category": "length", "factor": 0.01},
+    "mm": {"category": "length", "factor": 0.001},
+    "mi": {"category": "length", "factor": 1609.344},
     "mile": {"category": "length", "factor": 1609.344},
     "miles": {"category": "length", "factor": 1609.344},
-    "ft":  {"category": "length", "factor": 0.3048},
+    "ft": {"category": "length", "factor": 0.3048},
     "foot": {"category": "length", "factor": 0.3048},
     "feet": {"category": "length", "factor": 0.3048},
-    "in":  {"category": "length", "factor": 0.0254},
+    "in": {"category": "length", "factor": 0.0254},
     "inch": {"category": "length", "factor": 0.0254},
     "inches": {"category": "length", "factor": 0.0254},
-    "yd":  {"category": "length", "factor": 0.9144},
+    "yd": {"category": "length", "factor": 0.9144},
     "yard": {"category": "length", "factor": 0.9144},
     "yards": {"category": "length", "factor": 0.9144},
     # Mass - base: kg
-    "kg":  {"category": "mass", "factor": 1.0},
-    "g":   {"category": "mass", "factor": 0.001},
-    "mg":  {"category": "mass", "factor": 1e-6},
-    "lb":  {"category": "mass", "factor": 0.453592},
+    "kg": {"category": "mass", "factor": 1.0},
+    "g": {"category": "mass", "factor": 0.001},
+    "mg": {"category": "mass", "factor": 1e-6},
+    "lb": {"category": "mass", "factor": 0.453592},
     "lbs": {"category": "mass", "factor": 0.453592},
     "pound": {"category": "mass", "factor": 0.453592},
     "pounds": {"category": "mass", "factor": 0.453592},
-    "oz":  {"category": "mass", "factor": 0.0283495},
+    "oz": {"category": "mass", "factor": 0.0283495},
     "ounce": {"category": "mass", "factor": 0.0283495},
     "ounces": {"category": "mass", "factor": 0.0283495},
-    "t":   {"category": "mass", "factor": 1000.0},
+    "t": {"category": "mass", "factor": 1000.0},
     "tonne": {"category": "mass", "factor": 1000.0},
     # Speed - base: m/s
-    "m/s":  {"category": "speed", "factor": 1.0},
-    "km/h": {"category": "speed", "factor": 1/3.6},
-    "kmh":  {"category": "speed", "factor": 1/3.6},
-    "mph":  {"category": "speed", "factor": 0.44704},
+    "m/s": {"category": "speed", "factor": 1.0},
+    "km/h": {"category": "speed", "factor": 1 / 3.6},
+    "kmh": {"category": "speed", "factor": 1 / 3.6},
+    "mph": {"category": "speed", "factor": 0.44704},
     "knot": {"category": "speed", "factor": 0.514444},
     "knots": {"category": "speed", "factor": 0.514444},
 }
@@ -207,9 +222,13 @@ def convert_units(value: float, from_unit: str, to_unit: str) -> dict:
     to_info = _CONVERSIONS.get(tu)
 
     if from_info is None:
-        return {"error": f"Unknown unit '{from_unit}'. Check supported units in the tool description."}
+        return {
+            "error": f"Unknown unit '{from_unit}'. Check supported units in the tool description."
+        }
     if to_info is None:
-        return {"error": f"Unknown unit '{to_unit}'. Check supported units in the tool description."}
+        return {
+            "error": f"Unknown unit '{to_unit}'. Check supported units in the tool description."
+        }
     if from_info["category"] != to_info["category"]:
         return {
             "error": (

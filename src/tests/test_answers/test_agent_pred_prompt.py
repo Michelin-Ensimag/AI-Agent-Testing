@@ -1,5 +1,5 @@
 """
-test_agent_pred_prompt.py — Tests deepeval for trading with different prompts 
+test_agent_pred_prompt.py — Tests deepeval for trading with different prompts
 run it with :
     deepeval test run src/tests/test_agent_pred_prompt.py
 """
@@ -19,14 +19,14 @@ from deepeval.models.base_model import DeepEvalBaseLLM
 from deepeval.dataset import EvaluationDataset, Golden
 
 
-
 #  Configuration
 DATE = "2024-01-03"
 MAX_ITERATIONS = 10
-MCP_SERVER_PATH = Path(__file__).parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+MCP_SERVER_PATH = (
+    Path(__file__).parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+)
 
 
- 
 #  System prompts
 STRATEGY_SYSTEM_EN = (
     f"We are the {DATE}. "
@@ -100,7 +100,7 @@ EVALUATOR_SYSTEM = (
 )
 
 
-# Creating LLM 
+# Creating LLM
 def create_llm() -> ChatOpenAI:
     return ChatOpenAI(
         base_url="http://localhost:4141/v1",
@@ -109,7 +109,7 @@ def create_llm() -> ChatOpenAI:
     )
 
 
-# Agent loop 
+# Agent loop
 async def run_agent(
     question: str,
     system_prompt: str,
@@ -132,7 +132,6 @@ async def run_agent(
         }
     )
 
-    
     async with client.session("stock") as session:
         tools = await load_mcp_tools(session)
 
@@ -160,7 +159,9 @@ async def run_agent(
                 result = await tool.ainvoke(tool_call["args"])
                 if isinstance(result, list):
                     result = "\n".join(
-                        block.get("text", str(block)) if isinstance(block, dict) else str(block)
+                        block.get("text", str(block))
+                        if isinstance(block, dict)
+                        else str(block)
                         for block in result
                     )
                 messages.append(
@@ -168,7 +169,6 @@ async def run_agent(
                 )
 
     return "Max iterations reached."
-
 
 
 #  Proxy models
@@ -212,9 +212,8 @@ class ProxyTestLLM(DeepEvalBaseLLM):
 
 
 # Instances partagées entre tous les tests
-proxy_model      = ProxyLLM()
+proxy_model = ProxyLLM()
 proxy_test_model = ProxyTestLLM()
-
 
 
 #  Shared metrics
@@ -247,13 +246,15 @@ strategy_metric = GEval(
     model=proxy_test_model,
 )
 
+
 def build_test_cases(dataset: EvaluationDataset, proxy: ProxyLLM) -> list[LLMTestCase]:
     test_cases = []
     for golden in dataset.goldens:
         actual = proxy.generate(golden.input)
-        test_cases.append(LLMTestCase(name = golden.name, input=golden.input, actual_output=actual))
+        test_cases.append(
+            LLMTestCase(name=golden.name, input=golden.input, actual_output=actual)
+        )
     return test_cases
-
 
 
 #  Tests
@@ -348,9 +349,17 @@ def build_test_cases(dataset: EvaluationDataset, proxy: ProxyLLM) -> list[LLMTes
 
 
 def test_prompt_syntax():
-    dataset = EvaluationDataset(goldens=[
-        Golden(name = "test_en_no_ticker" ,input="What is the best trading strategy right now?"),
-        Golden(name = "test_en_ambiguous", input="Should I buy or sell something in tech?")
-    ])
+    dataset = EvaluationDataset(
+        goldens=[
+            Golden(
+                name="test_en_no_ticker",
+                input="What is the best trading strategy right now?",
+            ),
+            Golden(
+                name="test_en_ambiguous",
+                input="Should I buy or sell something in tech?",
+            ),
+        ]
+    )
     test_cases = build_test_cases(dataset, ProxyLLM(STRATEGY_SYSTEM_EN))
     evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
