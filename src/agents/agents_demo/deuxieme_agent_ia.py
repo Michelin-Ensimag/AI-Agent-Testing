@@ -2,14 +2,21 @@ from typing import TypedDict
 from langgraph.graph import StateGraph
 import requests
 
+import os
+from dotenv import load_dotenv
+
 # Définition de l'état de l'agent
 class AgentState(TypedDict):
     sujet: str
     infos: str
     summary: str
 
+load_dotenv()
+
 # Clé d'API pour NewsData.io
-API_KEY = "***REMOVED***"
+NEWS_API_KEY = os.getenv("NEWSDATA_API_KEY")
+if not NEWS_API_KEY:
+    raise ValueError("Missing NEWSDATA_API_KEY! Did you forget to set up your .env file?")
 
 # URL du proxy Copilot local
 PROXY_URL = "http://localhost:4141/v1/chat/completions"
@@ -36,7 +43,7 @@ def generer_texte_proxy(prompt: str) -> str:
 def rechercher_infos(state):
     url = "https://newsdata.io/api/1/news"
     params = {
-        "apikey": API_KEY,
+        "apikey": NEWS_API_KEY,
         "q": state["sujet"],
         "language": "fr",
         "country": "fr"
