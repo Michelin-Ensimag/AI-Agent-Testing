@@ -5,10 +5,8 @@ Tests unitaires pour mcp_server_strat_pred.py.
 Aucun appel réseau — toutes les données sont mockées.
 """
 
-import pytest
 import pandas as pd
-import numpy as np
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from mcp_servers.mcp_server_strat_pred import (
     compute_indicators,
@@ -19,14 +17,15 @@ from mcp_servers.mcp_server_strat_pred import (
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
+
 def make_ohlcv(n: int = 60, start_price: float = 150.0) -> dict:
     """Génère un faux dataset OHLCV avec n lignes."""
     prices = [start_price + i * 0.5 for i in range(n)]
     return {
-        "Open":   [p - 0.2 for p in prices],
-        "High":   [p + 1.0 for p in prices],
-        "Low":    [p - 1.0 for p in prices],
-        "Close":  prices,
+        "Open": [p - 0.2 for p in prices],
+        "High": [p + 1.0 for p in prices],
+        "Low": [p - 1.0 for p in prices],
+        "Close": prices,
         "Volume": [1_000_000] * n,
     }
 
@@ -34,18 +33,18 @@ def make_ohlcv(n: int = 60, start_price: float = 150.0) -> dict:
 def make_flat_ohlcv(n: int = 60, price: float = 100.0) -> dict:
     """Génère un dataset avec prix constants (pour tester les cas limites RSI)."""
     return {
-        "Open":   [price] * n,
-        "High":   [price] * n,
-        "Low":    [price] * n,
-        "Close":  [price] * n,
+        "Open": [price] * n,
+        "High": [price] * n,
+        "Low": [price] * n,
+        "Close": [price] * n,
         "Volume": [500_000] * n,
     }
 
 
 # ── Tests : compute_indicators ────────────────────────────────────────────────
 
-class TestComputeIndicators:
 
+class TestComputeIndicators:
     def test_returns_expected_keys(self):
         """Vérifie que toutes les colonnes d'indicateurs sont présentes."""
         result = compute_indicators(make_ohlcv())
@@ -62,21 +61,27 @@ class TestComputeIndicators:
         """Sur une tendance baissière, SMA20 doit être < SMA50."""
         prices = [200.0 - i * 1.0 for i in range(80)]
         ohlcv = {
-            "Open": prices, "High": prices,
-            "Low": prices, "Close": prices,
+            "Open": prices,
+            "High": prices,
+            "Low": prices,
+            "Close": prices,
             "Volume": [1_000_000] * 80,
         }
         result = compute_indicators(ohlcv)
         last_sma20 = result["SMA20"][-1]
         last_sma50 = result["SMA50"][-1]
-        assert last_sma20 < last_sma50, "SMA20 devrait être < SMA50 en tendance baissière"
+        assert last_sma20 < last_sma50, (
+            "SMA20 devrait être < SMA50 en tendance baissière"
+        )
 
     def test_sma20_greater_than_sma50_on_uptrend(self):
         """Sur une tendance haussière, SMA20 doit être > SMA50."""
         result = compute_indicators(make_ohlcv(n=80))
         last_sma20 = result["SMA20"][-1]
         last_sma50 = result["SMA50"][-1]
-        assert last_sma20 > last_sma50, "SMA20 devrait être > SMA50 en tendance haussière"
+        assert last_sma20 > last_sma50, (
+            "SMA20 devrait être > SMA50 en tendance haussière"
+        )
 
     def test_macd_is_numeric(self):
         """MACD et MACD_signal doivent être des flottants valides."""
@@ -106,8 +111,8 @@ class TestComputeIndicators:
 
 # ── Tests : risk_analysis ─────────────────────────────────────────────────────
 
-class TestRiskAnalysis:
 
+class TestRiskAnalysis:
     def test_returns_expected_keys(self):
         """Vérifie que les 3 métriques de risque sont présentes."""
         result = risk_analysis(make_ohlcv(n=100))
@@ -144,18 +149,21 @@ class TestRiskAnalysis:
 
 # ── Tests : get_market_data (mocké) ──────────────────────────────────────────
 
-class TestGetMarketData:
 
+class TestGetMarketData:
     @patch("mcp_servers.mcp_server_strat_pred.yf.download")
     def test_returns_dict_with_ohlcv_keys(self, mock_download):
         """Vérifie que get_market_data retourne bien un dict avec les clés OHLCV."""
-        mock_df = pd.DataFrame({
-            "Open":  [150.0, 151.0],
-            "High":  [152.0, 153.0],
-            "Low":   [149.0, 150.0],
-            "Close": [151.0, 152.0],
-            "Volume":[1_000_000, 1_100_000],
-        }, index=pd.to_datetime(["2024-01-01", "2024-01-02"]))
+        mock_df = pd.DataFrame(
+            {
+                "Open": [150.0, 151.0],
+                "High": [152.0, 153.0],
+                "Low": [149.0, 150.0],
+                "Close": [151.0, 152.0],
+                "Volume": [1_000_000, 1_100_000],
+            },
+            index=pd.to_datetime(["2024-01-01", "2024-01-02"]),
+        )
         mock_download.return_value = mock_df
 
         result = get_market_data("AAPL")
@@ -166,15 +174,22 @@ class TestGetMarketData:
     @patch("mcp_servers.mcp_server_strat_pred.yf.download")
     def test_index_converted_to_string(self, mock_download):
         """L'index datetime doit être converti en string pour la sérialisation JSON."""
-        mock_df = pd.DataFrame({
-            "Open": [150.0], "High": [151.0], "Low": [149.0],
-            "Close": [150.5], "Volume": [1_000_000],
-        }, index=pd.to_datetime(["2024-01-01"]))
+        mock_df = pd.DataFrame(
+            {
+                "Open": [150.0],
+                "High": [151.0],
+                "Low": [149.0],
+                "Close": [150.5],
+                "Volume": [1_000_000],
+            },
+            index=pd.to_datetime(["2024-01-01"]),
+        )
         mock_download.return_value = mock_df
 
         result = get_market_data("AAPL")
         # Le résultat doit être sérialisable (pas d'index Timestamp)
         import json
+
         json.dumps(result)  # Ne doit pas lever d'exception
 
     @patch("mcp_servers.mcp_server_strat_pred.yf.download")

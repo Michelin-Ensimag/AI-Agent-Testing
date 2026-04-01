@@ -36,7 +36,7 @@ SYSTEM_MSG = (
 MAX_ITERATIONS = 10
 
 
-# LLM 
+# LLM
 def create_llm():
     """Create and return configured ChatOpenAI instance."""
     return ChatOpenAI(
@@ -46,7 +46,7 @@ def create_llm():
     )
 
 
-# MCP 
+# MCP
 async def create_mcp_client():
     """Start MCP server and retrieve available tools."""
 
@@ -66,7 +66,7 @@ async def create_mcp_client():
     return client, tools
 
 
-# Agent Logic 
+# Agent Logic
 async def run_agent_logic(question: str, llm, tools, max_iterations=MAX_ITERATIONS):
 
     tools_by_name = {t.name: t for t in tools}
@@ -116,6 +116,7 @@ async def run_agent_logic(question: str, llm, tools, max_iterations=MAX_ITERATIO
 # CLI Interface
 # ─────────────────────────────────────────────
 
+
 async def run_cli():
     """Interactive CLI entrypoint."""
 
@@ -129,7 +130,9 @@ async def run_cli():
     print("\n── Agent ready. Examples: ──")
     print("  1. What is the price of Apple (AAPL)?")
     print("  2. Compare the price of LVMH (MC.PA) and Microsoft (MSFT).")
-    print("  3. What is Apple (AAPL)? If I invest that amount for 10 years at 8%, how much will I have?")
+    print(
+        "  3. What is Apple (AAPL)? If I invest that amount for 10 years at 8%, how much will I have?"
+    )
     print()
 
     try:

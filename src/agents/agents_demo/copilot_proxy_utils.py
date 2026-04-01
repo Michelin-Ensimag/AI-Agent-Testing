@@ -17,8 +17,7 @@ from langchain_core.tools import StructuredTool
 def _flatten_mcp_result(result):
     if isinstance(result, list):
         return "\n".join(
-            b["text"] if isinstance(b, dict) and "text" in b else str(b)
-            for b in result
+            b["text"] if isinstance(b, dict) and "text" in b else str(b) for b in result
         )
     return str(result)
 
@@ -28,9 +27,11 @@ def wrap_mcp_tool(tool):
     orig = tool.coroutine or tool.func
 
     if tool.coroutine:
+
         async def _flat(**kw):
             return _flatten_mcp_result(await orig(**kw))
     else:
+
         def _flat(**kw):
             return _flatten_mcp_result(orig(**kw))
 
