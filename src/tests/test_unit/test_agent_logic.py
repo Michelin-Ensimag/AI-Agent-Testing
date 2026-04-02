@@ -185,8 +185,8 @@ class TestCreateLLM:
         assert isinstance(llm, ChatOpenAI)
 
     def test_create_llm_uses_correct_model(self):
-        """Le modèle configuré doit être gpt-5.2."""
+        """Le modèle configuré doit être gpt-4.1."""
         from agents.agent_strat_pred import create_llm
 
         llm = create_llm()
-        assert llm.model_name == "gpt-5.2"
+        assert llm.model_name == "gpt-4.1"
