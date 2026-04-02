@@ -87,5 +87,5 @@ jobs:
           timeout 30 bash -c 'while ! curl -s http://localhost:4141/v1/models > /dev/null; do sleep 1; done'
           echo "API is up!"
 
-      - name: Run DeepLM Integration Tests
-        run: uv run pytest src/tests/test_integration/test_deeplm.py
+      - name: Run test_consistency
+        run: uv run pytest src/tests/test_judge_llm/test_consistency.py
