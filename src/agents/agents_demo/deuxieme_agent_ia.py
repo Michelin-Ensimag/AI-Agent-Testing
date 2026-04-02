@@ -1,9 +1,9 @@
-from typing import TypedDict
-from langgraph.graph import StateGraph
-import requests
-
 import os
+from typing import TypedDict
+
+import requests
 from dotenv import load_dotenv
+from langgraph.graph import StateGraph
 
 
 # Définition de l'état de l'agent
@@ -33,7 +33,7 @@ def generer_texte_proxy(prompt: str) -> str:
     """
     headers = {"Content-Type": "application/json"}
     payload = {
-        "model": "gpt-4o-mini",
+        "model": "gpt-4o",
         "messages": [{"role": "user", "content": prompt}],
     }
     try:

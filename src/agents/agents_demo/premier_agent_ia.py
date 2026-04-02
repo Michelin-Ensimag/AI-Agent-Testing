@@ -1,12 +1,10 @@
+import os
 from typing import TypedDict
 
-from langgraph.graph import StateGraph
-from langchain_ollama import OllamaLLM
-
 import requests
-
-import os
 from dotenv import load_dotenv
+from langchain_ollama import OllamaLLM
+from langgraph.graph import StateGraph
 
 
 class AgentState(TypedDict):

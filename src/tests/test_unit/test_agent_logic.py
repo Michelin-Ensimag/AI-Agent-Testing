@@ -5,9 +5,9 @@ Tests unitaires pour la logique des agents (agent_strat_pred, agent_strat_test).
 Aucun appel LLM réel — tout est mocké avec unittest.mock.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from langchain_core.messages import AIMessage
 
 
@@ -179,6 +179,7 @@ class TestCreateLLM:
     def test_create_llm_returns_chat_openai(self):
         """create_llm doit retourner une instance ChatOpenAI."""
         from langchain_openai import ChatOpenAI
+
         from agents.agent_strat_pred import create_llm
 
         llm = create_llm()

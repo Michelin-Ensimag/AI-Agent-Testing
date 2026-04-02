@@ -8,9 +8,9 @@ Run standalone:
     python mcp_server_strat_pred.py
 """
 
-import yfinance as yf
-import pandas as pd
 import numpy as np
+import pandas as pd
+import yfinance as yf
 from fastmcp import FastMCP
 
 # Create the MCP server

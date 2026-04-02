@@ -1,5 +1,6 @@
-import requests
 import json
+
+import requests
 
 # URL de ton proxy local
 PROXY_URL = "http://localhost:4141/v1/chat/completions"
@@ -11,7 +12,7 @@ def traduire_fr_en(texte):
     """
     headers = {"Content-Type": "application/json"}
     payload = {
-        "model": "gpt-4o-mini",
+        "model": "gpt-4o",
         "messages": [
             {"role": "user", "content": f"Traduis ce texte en anglais : {texte}"}
         ],

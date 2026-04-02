@@ -1,6 +1,6 @@
 from mcp_servers.old_mcp_servers.mcp_server_stock import (
-    get_stock_price,
     calculate_growth,
+    get_stock_price,
 )
 
 

@@ -14,13 +14,15 @@ Requires:
 import asyncio
 from contextlib import AsyncExitStack
 from pathlib import Path
+
 import httpx
 import openai
 from langchain.agents import create_agent
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_mcp_adapters.tools import load_mcp_tools
+from langchain_openai import ChatOpenAI
+
 from agents.agents_demo.copilot_proxy_utils import wrap_mcp_tool
 
 # Set to False to pass raw MCP content blocks through (e.g. when not using the Copilot proxy).
@@ -64,7 +66,7 @@ def create_llm():
     return ChatOpenAI(
         base_url="http://localhost:4141/v1",
         api_key="dummy-key",
-        model="gpt-5.2",  # Change model here
+        model="gpt-4.1",  # Change model here
         temperature=0,
     )
 

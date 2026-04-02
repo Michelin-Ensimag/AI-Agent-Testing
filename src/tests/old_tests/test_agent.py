@@ -1,4 +1,5 @@
 import asyncio
+
 from agents.agents_demo.agent_stock_mcp import run_agent_logic
 
 

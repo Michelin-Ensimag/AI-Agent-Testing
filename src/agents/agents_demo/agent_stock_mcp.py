@@ -17,13 +17,13 @@ Requires:
 """
 
 import asyncio
-import httpx
 from pathlib import Path
-import openai
-from langchain_openai import ChatOpenAI
-from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
+import httpx
+import openai
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_openai import ChatOpenAI
 
 # Configuration
 SYSTEM_MSG = (

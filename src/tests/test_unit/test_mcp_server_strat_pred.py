@@ -5,15 +5,15 @@ Tests unitaires pour mcp_server_strat_pred.py.
 Aucun appel réseau — toutes les données sont mockées.
 """
 
-import pandas as pd
 from unittest.mock import patch
+
+import pandas as pd
 
 from mcp_servers.mcp_server_strat_pred import (
     compute_indicators,
-    risk_analysis,
     get_market_data,
+    risk_analysis,
 )
-
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 

@@ -1,13 +1,10 @@
 import asyncio
 
-
 from deepeval import evaluate
-
-from deepeval.test_case import LLMTestCase, LLMTestCaseParams
-from deepeval.metrics import GEval, TaskCompletionMetric
-
-from deepeval.models.base_model import DeepEvalBaseLLM
 from deepeval.dataset import EvaluationDataset, Golden
+from deepeval.metrics import GEval, TaskCompletionMetric
+from deepeval.models.base_model import DeepEvalBaseLLM
+from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 
 import agents.agent_strat_pred as agent
 import agents.agent_strat_test as agent_test

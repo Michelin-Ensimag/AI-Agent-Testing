@@ -8,17 +8,15 @@ deepeval test run src/tests/test_agent_pred_prompt.py
 import asyncio
 from pathlib import Path
 
-from langchain_openai import ChatOpenAI
-from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain_mcp_adapters.tools import load_mcp_tools
-from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
-
 from deepeval import evaluate
-from deepeval.test_case import LLMTestCase
+from deepeval.dataset import EvaluationDataset, Golden
 from deepeval.metrics import GEval, TaskCompletionMetric
 from deepeval.models.base_model import DeepEvalBaseLLM
-from deepeval.dataset import EvaluationDataset, Golden
-from deepeval.test_case import LLMTestCaseParams
+from deepeval.test_case import LLMTestCase, LLMTestCaseParams
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_mcp_adapters.tools import load_mcp_tools
+from langchain_openai import ChatOpenAI
 
 # Configuration
 DATE = "2024-01-03"

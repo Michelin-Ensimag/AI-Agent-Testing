@@ -1,4 +1,5 @@
 import pytest
+
 from agents.agents_demo.agent_stock_mcp import create_mcp_client
 
 
