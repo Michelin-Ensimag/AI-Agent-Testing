@@ -4,6 +4,7 @@ import requests
 
 # URL de ton proxy local
 PROXY_URL = "http://localhost:4141/v1/chat/completions"
+REQUEST_TIMEOUT = 30
 
 
 def traduire_fr_en(texte):
@@ -18,7 +19,12 @@ def traduire_fr_en(texte):
         ],
     }
     try:
-        response = requests.post(PROXY_URL, headers=headers, data=json.dumps(payload))
+        response = requests.post(
+            PROXY_URL,
+            headers=headers,
+            data=json.dumps(payload),
+            timeout=REQUEST_TIMEOUT,
+        )
         response.raise_for_status()
         data = response.json()
         # On récupère le contenu de la première réponse

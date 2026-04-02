@@ -29,6 +29,12 @@ jobs:
       - name: Lint code
         run: ruff check .
 
+      - name: Install Bandit
+        run: uv tool install bandit
+
+      - name: Security Scan (Bandit)
+        run: bandit -r src/ -x src/tests/ # Ignore tests files, since we use asserts for pytest
+
   unit-tests:
     runs-on: ubuntu-latest
     steps:

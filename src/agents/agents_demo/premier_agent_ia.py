@@ -24,6 +24,7 @@ if not NEWS_API_KEY:
 
 # Initialisation du LLM
 LLM = OllamaLLM(model="gemma3:1b")
+REQUEST_TIMEOUT = 30
 
 
 # Fonction recherche d'informations sur un sujet donné
@@ -38,7 +39,7 @@ def rechercher_infos(state):
         "country": "fr",
     }
 
-    r = requests.get(url, params=params)
+    r = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
 
     # Gestion des erreurs de la requête à l'API NewsData
     if r.status_code != 200:

@@ -24,6 +24,7 @@ if not NEWS_API_KEY:
 
 # URL du proxy Copilot local
 PROXY_URL = "http://localhost:4141/v1/chat/completions"
+REQUEST_TIMEOUT = 30
 
 
 # Fonction pour appeler le proxy Copilot
@@ -37,7 +38,9 @@ def generer_texte_proxy(prompt: str) -> str:
         "messages": [{"role": "user", "content": prompt}],
     }
     try:
-        r = requests.post(PROXY_URL, headers=headers, json=payload)
+        r = requests.post(
+            PROXY_URL, headers=headers, json=payload, timeout=REQUEST_TIMEOUT
+        )
         r.raise_for_status()
         data = r.json()
         return data["choices"][0]["message"]["content"]
@@ -54,7 +57,7 @@ def rechercher_infos(state):
         "language": "fr",
         "country": "fr",
     }
-    r = requests.get(url, params=params)
+    r = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
     if r.status_code != 200:
         print("Erreur lors de la requête à l'API NewsData : ", r.status_code)
         exit(1)
