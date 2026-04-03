@@ -2,20 +2,20 @@ import json
 
 import requests
 
-# URL de ton proxy local
+# Local proxy URL
 PROXY_URL = "http://localhost:4141/v1/chat/completions"
 REQUEST_TIMEOUT = 30
 
 
-def traduire_fr_en(texte):
+def translate_french_to_english(text: str) -> str:
     """
-    Cette fonction permet la traduction d'un texte du français vers l'anglais en utilisant le proxy Copilot.
+    Translate text from French to English using the Copilot proxy.
     """
     headers = {"Content-Type": "application/json"}
     payload = {
         "model": "gpt-4o",
         "messages": [
-            {"role": "user", "content": f"Traduis ce texte en anglais : {texte}"}
+            {"role": "user", "content": f"Translate this text into English: {text}"}
         ],
     }
     try:
@@ -27,17 +27,17 @@ def traduire_fr_en(texte):
         )
         response.raise_for_status()
         data = response.json()
-        # On récupère le contenu de la première réponse
+        # Return the content of the first response choice.
         return data["choices"][0]["message"]["content"]
     except Exception as e:
-        return f"Erreur : {e}"
+        return f"Error: {e}"
 
 
 if __name__ == "__main__":
-    print("Traduction français  en anglais. Tapez 'q' pour quitter.")
+    print("French to English translation. Type 'q' to quit.")
     while True:
-        texte = input("Rentrez le texte en français que vous voulez traduire : ")
-        if texte.lower() == "q":
+        text = input("Enter French text to translate: ")
+        if text.lower() == "q":
             break
-        traduction = traduire_fr_en(texte)
-        print(f"Voici la traduction en anglais :  {traduction}\n")
+        translation = translate_french_to_english(text)
+        print(f"English translation: {translation}\n")

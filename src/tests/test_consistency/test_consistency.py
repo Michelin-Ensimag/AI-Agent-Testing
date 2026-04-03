@@ -1,8 +1,8 @@
 """
-test_agent_consistency.py — Tests de consistance / déterminisme de l'agent de trading
+test_agent_consistency.py - Consistency / determinism tests for the trading agent
 
-Vérifie que l'agent produit la même décision (BUY SELL HOLD ) et des niveaux
-de prix cohérents lorsqu'on lui soumet le même input plusieurs fois.
+Verifies that the agent returns the same decision (BUY/SELL/HOLD) and coherent
+price levels when given the same input multiple times.
 
 Run:
     deepeval test run src/tests/test_agent_consistency.py
@@ -233,15 +233,15 @@ def extract_decision(text: str) -> str | None:
 # Custom metric : decision agreement rate
 class DecisionConsistencyMetric(BaseMetric):
     """
-    Mesure le taux d'accord sur la décision BUY/SELL/HOLD entre N runs.
+    Measure agreement rate for BUY/SELL/HOLD decision across N runs.
 
-    Le test_case attendu a :
-      - input          : la question utilisateur (str)
-      - actual_output  : la décision majoritaire (str, ex. "BUY")
-      - context        : liste des N outputs bruts (list[str])
+    Expected test_case fields:
+        - input          : user question (str)
+        - actual_output  : majority decision (str, e.g. "BUY")
+        - context        : list of N raw outputs (list[str])
 
     Score = (count of majority decision) / N_RUNS
-    Passe si score >= threshold.
+    Passes if score >= threshold.
     """
 
     def __init__(self, threshold: float = 0.67, n_runs: int = N_RUNS):
@@ -278,7 +278,7 @@ class DecisionConsistencyMetric(BaseMetric):
 
 
 # GEval metric : cross-run coherence
-# Évalue si les N outputs sont logiquement cohérents entre eux.
+# Evaluate whether N outputs are logically coherent with each other.
 cross_run_coherence_metric = GEval(
     name="Cross-run coherence",
     criteria=(
@@ -323,7 +323,7 @@ def build_consistency_test_cases(
         f"[Run {i + 1}]\n{out}" for i, out in enumerate(outputs)
     )
 
-    # For DecisionConsistencyMetric: context carries raw outputs
+    # For DecisionConsistencyMetric: context carries raw outputs.
     decision_tc = LLMTestCase(
         name=f"{scenario_name}_decision_consistency",
         input=question,
@@ -348,9 +348,9 @@ def build_consistency_test_cases(
 # Tests
 def test_consistency():
     """
-    Lance N_RUNS fois chaque scénario et évalue :
-      1. DecisionConsistencyMetric — taux d'accord sur BUY/SELL/HOLD
-      2. Cross-run coherence (GEval) — cohérence logique globale entre les runs
+    Run each scenario N_RUNS times and evaluate:
+        1. DecisionConsistencyMetric - agreement rate on BUY/SELL/HOLD
+        2. Cross-run coherence (GEval) - global logical coherence between runs
     """
     decision_metric = DecisionConsistencyMetric(threshold=0.67, n_runs=N_RUNS)
 
@@ -365,13 +365,13 @@ def test_consistency():
         decision_cases.append(decision_tc)
         coherence_cases.append(coherence_tc)
 
-    # Évaluation 1 : taux d'accord sur la décision (métrique pure Python, rapide)
+    # Evaluation 1: decision agreement rate (pure Python metric, fast).
     evaluate(
         test_cases=decision_cases,
         metrics=[decision_metric],
     )
 
-    # Évaluation 2 : cohérence logique cross-runs (LLM judge)
+    # Evaluation 2: cross-run logical coherence (LLM judge).
     evaluate(
         test_cases=coherence_cases,
         metrics=[cross_run_coherence_metric],

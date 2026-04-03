@@ -115,8 +115,8 @@ async def run_agent(
     max_iterations: int = MAX_ITERATIONS,
 ) -> str:
     """
-    langchain-mcp-adapters >= 0.1.0 : plus de `async with client`.
-    On utilise client.session(server_name) pour garder la connexion ouverte.
+    langchain-mcp-adapters >= 0.1.0 does not use async with client.
+    Use client.session(server_name) to keep the connection open.
     """
     llm = create_llm()
 
@@ -171,7 +171,7 @@ async def run_agent(
 
 #  Proxy models
 class ProxyLLM(DeepEvalBaseLLM):
-    """Agent stratégie — utilise tous les outils MCP."""
+    """Strategy agent - uses all MCP tools."""
 
     def __init__(self, system_prompt: str = STRATEGY_SYSTEM_EN):
         self.system_prompt = system_prompt
@@ -190,7 +190,7 @@ class ProxyLLM(DeepEvalBaseLLM):
 
 
 class ProxyTestLLM(DeepEvalBaseLLM):
-    """Agent évaluateur — accès à get_market_data uniquement."""
+    """Evaluator agent - access to get_market_data only."""
 
     def load_model(self):
         return None
@@ -209,7 +209,7 @@ class ProxyTestLLM(DeepEvalBaseLLM):
         return "proxy-test-gpt-4.1"
 
 
-# Instances partagées entre tous les tests
+# Shared instances across all tests
 proxy_model = ProxyLLM()
 proxy_test_model = ProxyTestLLM()
 

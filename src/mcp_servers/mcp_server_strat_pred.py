@@ -14,7 +14,7 @@ import yfinance as yf
 from fastmcp import FastMCP
 
 # Create the MCP server
-mcp = FastMCP("Strategie Prediction Server")
+mcp = FastMCP("Strategy Prediction Server")
 
 
 # Tool : Fetch market data
@@ -50,7 +50,7 @@ def get_market_data(
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = data.columns.get_level_values(0)
 
-    # Convertir l'index datetime en string pour la sérialisation JSON
+    # Convert datetime index to string for JSON serialization.
     data.index = data.index.astype(str)
 
     return data.to_dict(orient="list")
@@ -60,11 +60,11 @@ def get_market_data(
 @mcp.tool()
 def compute_indicators(ohlcv: dict) -> dict:
     """
-    Compute SMA, EMA, RSI, MACD from OHLCV data.
-    SMA  : moyenne des prix sur les n derniers jours
-    EMA  : aussi une moyenne sur les prix mais donne plus de poids aux récents
-    RSI  : mesure la force du mouvement du prix ( ratio entre les hausses moyennes et baisses moyennes)
-    MACD : compare deux EMA
+    Compute SMA, EMA, RSI, and MACD from OHLCV data.
+    SMA  : average price over the last n periods
+    EMA  : weighted average that gives more importance to recent prices
+    RSI  : momentum indicator based on average gains versus average losses
+    MACD : difference between two EMAs
 
     Args:
         ohlcv: dict with keys ['Open', 'High', 'Low', 'Close', 'Volume']
@@ -151,13 +151,13 @@ def analyze_stock(
         start_date: YYYY-MM-DD
         end_date: YYYY-MM-DD
     """
-    # Étape 1 : fetch
+    # Step 1: fetch data
     ohlcv = get_market_data(ticker, interval, start_date, end_date)
 
-    # Étape 2 : indicators
+    # Step 2: compute indicators
     result = compute_indicators(ohlcv)
 
-    # Étape 3 : ne retourner que les 50 dernières lignes (suffisant pour l'agent)
+    # Step 3: keep only the last 50 rows (sufficient for the agent)
     df = pd.DataFrame(result).tail(50)
     return df.to_dict(orient="list")
 

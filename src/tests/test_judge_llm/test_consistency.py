@@ -10,7 +10,7 @@ import agents.agent_strat_pred as agent
 import agents.agent_strat_test as agent_test
 
 
-# changer le modèle qu'utilise deepEval
+# Change the model used by DeepEval.
 class ProxyTestLLM(DeepEvalBaseLLM):
     def __init__(self):
         pass
@@ -28,9 +28,9 @@ class ProxyTestLLM(DeepEvalBaseLLM):
         return str(response)
 
     def get_model_name(self) -> str:
-        # gemini-2.5-pro ou gpt-5.2
-        # ont tendance à ne pas faire passer les tests
-        # comparé à gpt-4o par exemple
+        # Models like gemini-2.5-pro or gpt-5.2
+        # tend to fail these tests more often
+        # compared to gpt-4o, for example.
         return "proxy-test-gpt-4.1"
 
 
@@ -58,7 +58,7 @@ class ProxyLLM(DeepEvalBaseLLM):
 proxy_model = ProxyLLM()
 
 
-# On peut baser notre LLM qui teste sur un autre modèle plus intelligent , voir https://llm-stats.com/
+# The judge LLM can also be based on another stronger model: https://llm-stats.com/
 proxy_test_model = ProxyTestLLM()
 
 
@@ -67,30 +67,30 @@ def test_consistency():
     # Prompt
     question = "Should I buy or not AAPL ?"
 
-    # Dataset des tests E2E à lancer
+    # E2E test dataset
     dataset = EvaluationDataset(
         goldens=[
             Golden(input=question),
             Golden(
-                input="Si j'entre sur AAPL à $180,"
-                "propose-moi un plan de sortie incluant"
-                " un Stop Loss à 5% et deux paliers de Take Profit"
-                " basés sur les résistances historiques. "
+                input="If I enter AAPL at $180,"
+                " propose an exit plan including"
+                " a 5% stop-loss and two take-profit levels"
+                " based on historical resistance zones."
             ),
             Golden(
-                input="Compte tenu d'un portefeuille conservateur,"
-                " quel est le risque de concentration si j'achète du AAPL maintenant ?"
+                input="Given a conservative portfolio,"
+                " what concentration risk do I face if I buy AAPL now?"
             ),
             Golden(
-                input="L'avance de la concurrence sur l'IA menace-t-elle la position dominante d'Apple à long terme ?"
+                input="Does AI competition threaten Apple's long-term dominant position?"
             ),
         ]
     )
-    #                                        Golden(input="Le RSI d'AAPL approche de 75. Stratégiquement, est-ce un moment d'achat ou faut-il attendre une correction ?")
+    #                                        Golden(input="AAPL RSI is approaching 75. Strategically, buy now or wait for a correction?")
 
     dataset = EvaluationDataset(goldens=[Golden(input=question)])
 
-    # Cette métrique dans DeepEval agit comme un inspecteur de travaux finis. Elle ne se laisse pas charmer par le beau langage. Elle vérifie si les "cases" de l'input ont été cochées.
+    # This DeepEval metric checks whether the requested task was actually completed.
     task_completion_metric = TaskCompletionMetric(threshold=0.5, model=proxy_test_model)
 
     strategy_metric = GEval(
@@ -107,11 +107,11 @@ def test_consistency():
         model=proxy_test_model,
     )
 
-    # Premier cas de test
+    # First test case
     test_cases = []
 
     for golden in dataset.goldens:
-        # Pour tester la consistence du juge, il faut mettre le meme output pour chaque golden
+        # To evaluate judge consistency, keep the same output for each golden.
         actual = proxy_model.generate(golden.input)
 
         for i in range(10):

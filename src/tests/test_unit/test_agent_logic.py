@@ -1,8 +1,8 @@
 """
 tests/unit/test_agent_logic.py
 
-Tests unitaires pour la logique des agents (agent_strat_pred, agent_strat_test).
-Aucun appel LLM réel — tout est mocké avec unittest.mock.
+Unit tests for agent logic (agent_strat_pred, agent_strat_test).
+No real LLM calls are made - everything is mocked with unittest.mock.
 """
 
 from unittest.mock import AsyncMock, MagicMock
@@ -12,7 +12,7 @@ from langchain_core.messages import AIMessage
 
 
 def make_fake_tool(name: str, return_value: str = "fake_result"):
-    """Crée un faux outil MCP."""
+    """Create a fake MCP tool."""
     tool = MagicMock()
     tool.name = name
     tool.description = f"Fake tool: {name}"
@@ -21,7 +21,7 @@ def make_fake_tool(name: str, return_value: str = "fake_result"):
 
 
 def make_ai_message(content: str = "", tool_calls: list = None):
-    """Crée un faux AIMessage avec ou sans tool_calls."""
+    """Create a fake AIMessage with or without tool_calls."""
     msg = MagicMock(spec=AIMessage)
     msg.content = content
     msg.tool_calls = tool_calls or []
@@ -31,7 +31,7 @@ def make_ai_message(content: str = "", tool_calls: list = None):
 class TestAgentStratPred:
     @pytest.mark.asyncio
     async def test_returns_content_when_no_tool_calls(self):
-        """L'agent doit retourner le contenu direct si le LLM ne fait pas de tool call."""
+        """The agent should return direct content when no tool call is requested."""
         from agents.agent_strat_pred import run_agent_logic
 
         fake_llm = MagicMock()
@@ -47,10 +47,10 @@ class TestAgentStratPred:
 
     @pytest.mark.asyncio
     async def test_calls_tool_then_returns_final_answer(self):
-        """L'agent doit appeler un outil, puis retourner la réponse finale."""
+        """The agent should call a tool, then return the final answer."""
         from agents.agent_strat_pred import run_agent_logic
 
-        # Premier appel : LLM demande un tool call
+        # First call: the LLM requests a tool call.
         tool_call = {
             "name": "analyze_stock",
             "args": {"ticker": "AAPL"},
@@ -58,7 +58,7 @@ class TestAgentStratPred:
         }
         first_response = make_ai_message(tool_calls=[tool_call])
 
-        # Deuxième appel : LLM donne la réponse finale
+        # Second call: the LLM returns the final answer.
         final_response = make_ai_message(
             content="HOLD — MACD bearish crossover detected."
         )
@@ -72,15 +72,15 @@ class TestAgentStratPred:
         result = await run_agent_logic("Analyze AAPL", fake_llm, tools)
 
         assert result == "HOLD — MACD bearish crossover detected."
-        # Vérifie que le tool a bien été appelé
+        # Verify the tool was called.
         tools[0].ainvoke.assert_called_once_with({"ticker": "AAPL"})
 
     @pytest.mark.asyncio
     async def test_max_iterations_returns_fallback_message(self):
-        """Si la limite d'itérations est atteinte, retourner le message d'erreur."""
+        """If iteration limit is reached, return the fallback error message."""
         from agents.agent_strat_pred import run_agent_logic
 
-        # LLM demande toujours un tool call → boucle infinie
+        # The LLM always asks for a tool call -> infinite loop scenario.
         tool_call = {
             "name": "analyze_stock",
             "args": {"ticker": "TSLA"},
@@ -102,7 +102,7 @@ class TestAgentStratPred:
 
     @pytest.mark.asyncio
     async def test_tool_result_list_is_joined_as_string(self):
-        """Si le tool retourne une liste de blocs, ils doivent être concaténés en string."""
+        """If the tool returns block list output, it should be joined into one string."""
         from agents.agent_strat_pred import run_agent_logic
 
         tool_call = {
@@ -117,7 +117,7 @@ class TestAgentStratPred:
         fake_llm.bind_tools = MagicMock(return_value=fake_llm)
         fake_llm.ainvoke = AsyncMock(side_effect=[first_response, final_response])
 
-        # Tool retourne une liste de dicts (format MCP bloc)
+        # Tool returns a list of dict blocks (MCP block format).
         list_result = [{"text": "SMA20=150"}, {"text": "RSI=72"}]
         tools = [make_fake_tool("analyze_stock", return_value=list_result)]
 
@@ -129,7 +129,7 @@ class TestAgentStratPred:
 class TestAgentStratTest:
     @pytest.mark.asyncio
     async def test_evaluator_only_uses_allowed_tools(self):
-        """L'agent évaluateur ne doit utiliser que get_market_data, pas analyze_stock."""
+        """The evaluator should use only get_market_data, not analyze_stock."""
         from agents.agent_strat_test import run_agent_logic
 
         final_response = make_ai_message(
@@ -140,7 +140,7 @@ class TestAgentStratTest:
         fake_llm.bind_tools = MagicMock(return_value=fake_llm)
         fake_llm.ainvoke = AsyncMock(return_value=final_response)
 
-        # On donne les deux tools, mais seul get_market_data est autorisé
+        # Provide both tools, but only get_market_data is allowed.
         tools = [
             make_fake_tool("analyze_stock"),
             make_fake_tool("get_market_data"),
@@ -150,7 +150,7 @@ class TestAgentStratTest:
             "Evaluate this strategy: BUY AAPL RSI=28", fake_llm, tools
         )
 
-        # bind_tools ne doit avoir reçu que get_market_data
+        # bind_tools should receive only get_market_data.
         bound_tools = fake_llm.bind_tools.call_args[0][0]
         tool_names = [t.name for t in bound_tools]
         assert "get_market_data" in tool_names
@@ -158,7 +158,7 @@ class TestAgentStratTest:
 
     @pytest.mark.asyncio
     async def test_evaluator_returns_judgment(self):
-        """L'évaluateur doit retourner une réponse contenant un jugement."""
+        """The evaluator should return a response containing a judgment."""
         from agents.agent_strat_test import run_agent_logic
 
         judgment = "GOOD — RSI oversold at 25 correctly leads to BUY decision."
@@ -177,7 +177,7 @@ class TestAgentStratTest:
 
 class TestCreateLLM:
     def test_create_llm_returns_chat_openai(self):
-        """create_llm doit retourner une instance ChatOpenAI."""
+        """create_llm should return a ChatOpenAI instance."""
         from langchain_openai import ChatOpenAI
 
         from agents.agent_strat_pred import create_llm
@@ -186,7 +186,7 @@ class TestCreateLLM:
         assert isinstance(llm, ChatOpenAI)
 
     def test_create_llm_uses_correct_model(self):
-        """Le modèle configuré doit être gpt-4.1."""
+        """The configured model should be gpt-4.1."""
         from agents.agent_strat_pred import create_llm
 
         llm = create_llm()

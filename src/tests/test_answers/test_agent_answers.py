@@ -10,7 +10,7 @@ import agents.agent_strat_pred as agent
 import agents.agent_strat_test as agent_test
 
 
-# changer le modèle qu'utilise deepEval
+# Change the model used by DeepEval.
 class ProxyTestLLM(DeepEvalBaseLLM):
     def __init__(self):
         pass
@@ -28,9 +28,9 @@ class ProxyTestLLM(DeepEvalBaseLLM):
         return str(response)
 
     def get_model_name(self) -> str:
-        # gemini-2.5-pro ou gpt-5.2
-        # ont tendance à ne pas faire passer les tests
-        # comparé à gpt-4o par exemple
+        # Models like gemini-2.5-pro or gpt-5.2
+        # tend to fail these tests more often
+        # compared to gpt-4o, for example.
         return "proxy-test-gpt-4.1"
 
 
@@ -58,25 +58,28 @@ class ProxyLLM(DeepEvalBaseLLM):
 proxy_model = ProxyLLM()
 
 
-# On peut baser notre LLM qui teste sur un autre modèle plus intelligent , voir https://llm-stats.com/
+# The judge LLM can also be based on another stronger model: https://llm-stats.com/
 proxy_test_model = ProxyTestLLM()
 
 
 def test_coherence():
 
     # Prompt
-    question = "Le RSI d'AAPL approche de 75. Stratégiquement, est-ce un moment d'achat ou faut-il attendre une correction ?"
+    question = (
+        "AAPL RSI is approaching 75. Strategically, is this a good entry point "
+        "or should we wait for a correction?"
+    )
 
-    # Dataset des tests E2E à lancer
+    # E2E test dataset
     dataset = EvaluationDataset(goldens=[Golden(input=question)])
 
-    # Cette métrique dans DeepEval agit comme un inspecteur de travaux finis. Elle ne se laisse pas charmer par le beau langage. Elle vérifie si les "cases" de l'input ont été cochées.
+    # This DeepEval metric checks whether the requested task was actually completed.
     task_completion_metric = TaskCompletionMetric(threshold=0.5, model=proxy_test_model)
 
-    # Jugement qualitatif de l'output
+    # Qualitative output judgment
     # coherence_metric = GEval(
-    #     name="Cohérence",
-    #     criteria=" Vérifie si la réponse est polie et cohérente.",
+    #     name="Coherence",
+    #     criteria="Check whether the response is polite and coherent.",
     #     evaluation_params=[
     #         LLMTestCaseParams.ACTUAL_OUTPUT,
     #         LLMTestCaseParams.INPUT
@@ -99,7 +102,7 @@ def test_coherence():
         model=proxy_test_model,
     )
 
-    # Premier cas de test
+    # First test case
     test_cases = []
 
     for golden in dataset.goldens:

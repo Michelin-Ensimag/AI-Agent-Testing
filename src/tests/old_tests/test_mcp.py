@@ -6,8 +6,8 @@ from agents.agents_demo.agent_stock_mcp import create_mcp_client
 @pytest.mark.asyncio
 async def test_mcp_tools_exist():
     """
-    Vérifie que les outils MCP 'get_stock_price' et 'calculate_growth'
-    sont bien exposés par le serveur MCP.
+    Verify that MCP tools 'get_stock_price' and 'calculate_growth'
+    are exposed by the MCP server.
     """
     client, tools = await create_mcp_client()
     tool_names = [t.name for t in tools]
