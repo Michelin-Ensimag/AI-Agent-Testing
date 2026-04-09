@@ -106,29 +106,18 @@ jobs:
       #   run: uv run pytest --alluredir=allure-results src/tests/test_answers/
       #   if: always()
 
-      # Generate and deploy Allure
-      - name: Get Allure history
-        uses: actions/checkout@v3
-        if: always()
-        continue-on-error: true
-        with:
-          ref: gh-pages
-          path: gh-pages
-
+      # GENERATE & UPLOAD ALLURE REPORT (Github Pages not available for private repos)
       - name: Generate Allure Report
         uses: simple-elf/allure-report-action@master
         if: always()
-        id: allure-report
         with:
           allure_results: allure-results
-          gh_pages: gh-pages
           allure_report: allure-report
-          allure_history: allure-history
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload Allure Report as Artifact
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: allure-history
+          name: allure-html-report
+          path: allure-report
+          retention-days: 14 # Keeps your repo size small by deleting old reports
