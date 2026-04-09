@@ -1,5 +1,7 @@
 
 # AI-Agent-Testing
+[![CI](https://github.com/Michelin-Ensimag/AI-Agent-Testing/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Michelin-Ensimag/AI-Agent-Testing/actions/workflows/ci.yml)
+
 Repository for the project "Tester les Agents IA"
 
 
