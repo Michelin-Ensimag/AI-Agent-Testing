@@ -10,6 +10,8 @@ from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 import agents.agent_strat_pred as agent
 import agents.agent_strat_test as agent_test
 
+MARKDOWN_ATTACHMENT_TYPE = getattr(allure.attachment_type, "MARKDOWN", "text/markdown")
+
 
 # Change the model used by DeepEval.
 class ProxyTestLLM(DeepEvalBaseLLM):
@@ -167,5 +169,5 @@ def test_consistency():
         allure.attach(
             markdown_table,
             name="3. DeepEval Metrics Summary",
-            attachment_type=allure.attachment_type.MARKDOWN,
+            attachment_type=MARKDOWN_ATTACHMENT_TYPE,
         )

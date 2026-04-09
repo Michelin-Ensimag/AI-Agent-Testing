@@ -24,6 +24,8 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langchain_openai import ChatOpenAI
 
+MARKDOWN_ATTACHMENT_TYPE = getattr(allure.attachment_type, "MARKDOWN", "text/markdown")
+
 # Configuration
 DATE = "2024-01-03"
 N_RUNS = 3
@@ -419,5 +421,5 @@ def test_consistency():
             allure.attach(
                 markdown_table,
                 name=f"{scenario_name} - 3. DeepEval Metrics Summary",
-                attachment_type=allure.attachment_type.MARKDOWN,
+                attachment_type=MARKDOWN_ATTACHMENT_TYPE,
             )
