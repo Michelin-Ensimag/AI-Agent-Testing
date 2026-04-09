@@ -106,7 +106,7 @@ jobs:
       #   run: uv run pytest --alluredir=allure-results src/tests/test_answers/
       #   if: always()
 
-      # GENERATE & UPLOAD ALLURE REPORT (Github Pages not available for private repos)
+      # GENERATE ALLURE REPORT, STORE ARTIFACT, AND PREPARE GITHUB PAGES DEPLOYMENT
       - name: Generate Allure Report
         uses: simple-elf/allure-report-action@master
         if: always()
@@ -114,10 +114,23 @@ jobs:
           allure_results: allure-results
           allure_report: allure-report
 
-      - name: Upload Allure Report as Artifact
-        uses: actions/upload-artifact@v4
-        if: always()
+      - name: Upload Allure Report for GitHub Pages
+        if: github.ref == 'refs/heads/main' && always()
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: allure-html-report
           path: allure-report
-          retention-days: 14 # Keeps your repo size small by deleting old reports
+
+  deploy-allure-report:
+    if: github.ref == 'refs/heads/main' && always()
+    needs: deepeval-tests
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Allure Report to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

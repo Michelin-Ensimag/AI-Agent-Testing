@@ -1,5 +1,6 @@
 import asyncio
 
+import allure
 from deepeval import evaluate
 from deepeval.dataset import EvaluationDataset, Golden
 from deepeval.metrics import GEval, TaskCompletionMetric
@@ -62,6 +63,23 @@ proxy_model = ProxyLLM()
 proxy_test_model = ProxyTestLLM()
 
 
+def _fmt_score(value: float | None) -> str:
+    return f"{value:.2f}" if value is not None else "N/A"
+
+
+def _fmt_reason(value: str | None) -> str:
+    if not value:
+        return "-"
+    return value.replace("|", "\\|").replace("\n", "<br>")
+
+
+def _fmt_status(metric) -> str:
+    try:
+        return "PASS" if metric.is_successful() else "FAIL"
+    except Exception:
+        return "N/A"
+
+
 def test_consistency():
 
     # Prompt
@@ -109,13 +127,45 @@ def test_consistency():
 
     # First test case
     test_cases = []
+    agent_output = ""
 
     for golden in dataset.goldens:
         # To evaluate judge consistency, keep the same output for each golden.
         actual = proxy_model.generate(golden.input)
+        agent_output = actual
 
         for i in range(10):
             test_case = LLMTestCase(input=golden.input, actual_output=actual)
             test_cases.append(test_case)
 
-    evaluate(test_cases=test_cases, metrics=[task_completion_metric, strategy_metric])
+    try:
+        evaluate(
+            test_cases=test_cases, metrics=[task_completion_metric, strategy_metric]
+        )
+    finally:
+        markdown_table = (
+            "| Metric | Score | Passed | Reason |\n"
+            "|--------|-------|--------|--------|\n"
+            f"| {task_completion_metric.__class__.__name__} | {_fmt_score(getattr(task_completion_metric, 'score', None))} | "
+            f"{_fmt_status(task_completion_metric)} | "
+            f"{_fmt_reason(getattr(task_completion_metric, 'reason', None))} |\n"
+            f"| {strategy_metric.name} | {_fmt_score(getattr(strategy_metric, 'score', None))} | "
+            f"{_fmt_status(strategy_metric)} | "
+            f"{_fmt_reason(getattr(strategy_metric, 'reason', None))} |"
+        )
+
+        allure.attach(
+            question,
+            name="1. User Input",
+            attachment_type=allure.attachment_type.TEXT,
+        )
+        allure.attach(
+            agent_output or "No output captured.",
+            name="2. Agent Output",
+            attachment_type=allure.attachment_type.TEXT,
+        )
+        allure.attach(
+            markdown_table,
+            name="3. DeepEval Metrics Summary",
+            attachment_type=allure.attachment_type.MARKDOWN,
+        )
