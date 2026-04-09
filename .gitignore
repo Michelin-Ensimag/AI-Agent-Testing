@@ -33,3 +33,10 @@ build/
 *.egg-info/
 
 .env.local
+
+# Coverage reports
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+htmlcov/

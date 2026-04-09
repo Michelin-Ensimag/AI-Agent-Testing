@@ -49,13 +49,13 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: uv sync
+        run: |
+          uv sync
+          uv pip install pytest-cov
 
-      - name: Run pytest - test_agent_logic
-        run: uv run pytest src/tests/test_unit/test_agent_logic.py
-
-      - name: Run pytest - test_mcp_server_strat_pred
-        run: uv run pytest src/tests/test_unit/test_mcp_server_strat_pred.py
+      - name: Run unit tests with Coverage Quality Gate
+        # This runs all tests in test_unit/ and fails if coverage is below 75%
+        run: uv run pytest --cov=src --cov-fail-under=75 src/tests/test_unit/
 
   deeplm-tests:
     needs: unit-tests
