@@ -26,9 +26,3 @@ uv add <package>       # normal dependency
 uv add --dev <package> # dev/test only (e.g. linters, pytest plugins)
 ```
 Then commit `pyproject.toml` and `uv.lock`.
-
----
-Team:
-- Mohammed Mamoune Katni
-- Mohamed Trombati
-- Sam Hajj Assaf
