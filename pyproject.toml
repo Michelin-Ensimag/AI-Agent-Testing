@@ -25,6 +25,7 @@ dev = [
     "allure-pytest>=2.15.3",
     "pytest>=9.0.2",
     "pytest-cov>=7.1.0",
+    "pytest-html>=4.2.0",
     "ruff>=0.15.8",
 ]
 

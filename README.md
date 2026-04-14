@@ -1,6 +1,6 @@
 
 # AI-Agent-Testing
-[![CI](https://github.com/Michelin-Ensimag/AI-Agent-Testing/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Michelin-Ensimag/AI-Agent-Testing/actions/workflows/ci.yml) [![Allure Report](https://img.shields.io/website?url=https%3A%2F%2Fmichelin-ensimag.github.io%2FAI-Agent-Testing%2F&up_message=live&down_message=offline&label=Allure%20Report)](https://michelin-ensimag.github.io/AI-Agent-Testing/)
+[![CI](https://github.com/Michelin-Ensimag/AI-Agent-Testing/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Michelin-Ensimag/AI-Agent-Testing/actions/workflows/ci.yml) [![DeepEval Report](https://img.shields.io/website?url=https%3A%2F%2Fmichelin-ensimag.github.io%2FAI-Agent-Testing%2F&up_message=live&down_message=offline&label=Allure%20Report)](https://michelin-ensimag.github.io/AI-Agent-Testing/)
 
 Repository for the project "Tester les Agents IA"
 

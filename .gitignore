@@ -40,3 +40,8 @@ build/
 coverage.xml
 *.cover
 htmlcov/
+
+# Github Pages Local Tests
+deepeval_results
+gh-pages-build
+
