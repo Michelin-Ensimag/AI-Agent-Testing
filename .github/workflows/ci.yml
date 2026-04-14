@@ -69,9 +69,9 @@ jobs:
         test_file:
           - src/tests/test_consistency/test_consistency.py
           - src/tests/test_judge_llm/test_judge_consistency.py
-          # - src/tests/test_answers/test_agent_answers.py
-          # - src/tests/test_answers/test_agent_pred_prompt.py
-          # - src/tests/test_answers/test_prompt.py
+          - src/tests/test_answers/test_agent_answers.py
+          - src/tests/test_answers/test_agent_pred_prompt.py
+          - src/tests/test_answers/test_prompt.py
           # - (add more tests)
 
     steps:
