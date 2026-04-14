@@ -127,7 +127,7 @@ jobs:
           retention-days: 1
 
   generate-report:
-    needs: deepeval-matrix
+    needs: deepeval-tests
     if: always() # Run this even if some matrix tests failed
     runs-on: ubuntu-latest
     steps:
