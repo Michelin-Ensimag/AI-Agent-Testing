@@ -28,7 +28,21 @@ def generate_html():
             data = json.load(f)
 
         test_cases = data.get("testRunData", {}).get("testCases", [])
-        suites[suite_id] = {"name": suite_name, "cases": test_cases}
+        success_count = sum(1 for case in test_cases if case.get("success", False))
+        failed_count = len(test_cases) - success_count
+        total_count = len(test_cases)
+        pass_rate = (success_count / total_count * 100) if total_count else 0
+
+        suites[suite_id] = {
+            "name": suite_name,
+            "cases": test_cases,
+            "summary": {
+                "success": success_count,
+                "failed": failed_count,
+                "total": total_count,
+                "pass_rate": pass_rate,
+            },
+        }
 
     # 2. Build the HTML Header & Navigation Tabs
     html_content = f"""
@@ -60,7 +74,7 @@ def generate_html():
     </head>
     <body class="bg-gray-50 p-8 text-gray-800">
         <div class="max-w-[1600px] mx-auto">
-            <h1 class="text-3xl font-bold mb-2">AI Agent Evaluation Report</h1>
+            <h1 class="text-3xl font-bold mb-2">DeepEval Evaluation Report</h1>
             <p class="text-gray-500 mb-6">Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
 
             <div class="mb-4 border-b border-gray-200">
@@ -96,9 +110,28 @@ def generate_html():
     is_first = True
     for suite_id, suite_data in suites.items():
         visibility = "" if is_first else "hidden"
+        summary = suite_data["summary"]
 
         html_content += f"""
                 <div class="{visibility} tab-panel" id="{suite_id}">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
+                        <div class="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-green-700">Success</p>
+                            <p class="text-2xl font-bold text-green-900">{summary["success"]}</p>
+                        </div>
+                        <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-red-700">Failed</p>
+                            <p class="text-2xl font-bold text-red-900">{summary["failed"]}</p>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-600">Total</p>
+                            <p class="text-2xl font-bold text-slate-800">{summary["total"]}</p>
+                        </div>
+                        <div class="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">Pass Rate</p>
+                            <p class="text-2xl font-bold text-indigo-900">{summary["pass_rate"]:.1f}%</p>
+                        </div>
+                    </div>
                     <div class="bg-white shadow-md rounded-lg overflow-hidden">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-800 text-white">
