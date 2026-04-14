@@ -21,7 +21,7 @@ from langchain_openai import ChatOpenAI
 DATE = "2024-01-03"
 MAX_ITERATIONS = 10
 MCP_SERVER_PATH = (
-    Path(__file__).parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
+    Path(__file__).parent.parent.parent / "mcp_servers" / "mcp_server_strat_pred.py"
 )
 
 
