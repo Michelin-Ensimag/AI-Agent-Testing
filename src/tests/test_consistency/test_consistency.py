@@ -331,12 +331,10 @@ def build_consistency_test_cases(
     question: str,
     system_prompt: str,
     n_runs: int = N_RUNS,
-) -> tuple[LLMTestCase, LLMTestCase]:
+) -> LLMTestCase:
     """
     Run the agent N times for the same question.
-    Returns two LLMTestCases:
-      - one for DecisionConsistencyMetric (context = raw outputs)
-      - one for cross_run_coherence_metric (actual_output = concatenated runs)
+    Returns ONE LLMTestCase that feeds both metrics.
     """
     proxy = ProxyLLM(system_prompt)
     outputs = [proxy.generate(question) for _ in range(n_runs)]
@@ -346,38 +344,25 @@ def build_consistency_test_cases(
         f"[Run {i + 1}]\n{out}" for i, out in enumerate(outputs)
     )
 
-    # For DecisionConsistencyMetric: context carries raw outputs.
-    decision_tc = LLMTestCase(
-        name=f"{scenario_name}_decision_consistency",
+    # ONE test case to rule them all
+    return LLMTestCase(
+        name=f"{scenario_name}_consistency",
         input=question,
-        actual_output=Counter(
-            d for d in (extract_decision(o) for o in outputs) if d
-        ).most_common(1)[0][0]
-        if any(extract_decision(o) for o in outputs)
-        else "UNKNOWN",
-        context=outputs,
+        actual_output=concatenated,  # GEval coherence reads this
+        context=outputs,  # DecisionConsistencyMetric reads this
     )
-
-    # For GEval cross-run coherence: actual_output is the full concatenated text
-    coherence_tc = LLMTestCase(
-        name=f"{scenario_name}_cross_run_coherence",
-        input=question,
-        actual_output=concatenated,
-    )
-
-    return decision_tc, coherence_tc
 
 
 # Tests
 def test_consistency():
     """
-    Run each scenario N_RUNS times and evaluate:
-        1. DecisionConsistencyMetric - agreement rate on BUY/SELL/HOLD
-        2. Cross-run coherence (GEval) - global logical coherence between runs
+    Run each scenario N_RUNS times and evaluate both metrics simultaneously.
     """
     for scenario_name, question, prompt_key in CONSISTENCY_SCENARIOS:
         system_prompt = SYSTEM_PROMPTS[prompt_key]
-        decision_tc, coherence_tc = build_consistency_test_cases(
+
+        # Now it only returns one test case
+        tc = build_consistency_test_cases(
             scenario_name, question, system_prompt, n_runs=N_RUNS
         )
 
@@ -385,16 +370,10 @@ def test_consistency():
         coherence_metric = _build_cross_run_coherence_metric()
 
         try:
-            # Evaluation 1: decision agreement rate (pure Python metric, fast).
+            # Evaluate BOTH metrics in a single run
             evaluate(
-                test_cases=[decision_tc],
-                metrics=[decision_metric],
-            )
-
-            # Evaluation 2: cross-run logical coherence (LLM judge).
-            evaluate(
-                test_cases=[coherence_tc],
-                metrics=[coherence_metric],
+                test_cases=[tc],
+                metrics=[decision_metric, coherence_metric],
             )
         finally:
             markdown_table = (
@@ -414,7 +393,7 @@ def test_consistency():
                 attachment_type=allure.attachment_type.TEXT,
             )
             allure.attach(
-                coherence_tc.actual_output,
+                tc.actual_output,
                 name=f"{scenario_name} - 2. Agent Outputs (All Runs)",
                 attachment_type=allure.attachment_type.TEXT,
             )
