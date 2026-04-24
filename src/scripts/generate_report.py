@@ -112,7 +112,7 @@ def generate_html():
                 <div>
                     <h1 class="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
                         <i data-lucide="bot" class="w-8 h-8 text-blue-600"></i>
-                        AI Agent Evaluation Dashboard
+                        AI Agent DeepEval Dashboard
                     </h1>
                     <p class="text-slate-500 mt-1 flex items-center gap-2">
                         <i data-lucide="clock" class="w-4 h-4"></i> Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
