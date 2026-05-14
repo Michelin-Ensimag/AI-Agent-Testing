@@ -158,7 +158,7 @@ jobs:
           mv artifacts/* deepeval_results/ || echo "No artifacts found"
 
       - name: Generate Custom HTML Report
-        run: uv run python src/scripts/generate_report.py
+        run: uv run python src/scripts/generate_deepeval_dashboard.py
 
       - name: Upload Report for GitHub Pages
         if: github.ref == 'refs/heads/main'
