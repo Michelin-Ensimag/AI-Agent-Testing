@@ -91,7 +91,7 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      # Fails the job if paid models are detected
+      # Fails on non free models or after June 1, 2026 (end of credit-free unlimited access)
       - name: Safeguard - Check Free Model Usage
         run: uv run pytest -s src/tests/test_integration/test_model_safeguards.py
 

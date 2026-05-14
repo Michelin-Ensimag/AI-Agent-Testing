@@ -1,7 +1,15 @@
 """Safeguard tests to prevent paid model usage in agent files."""
 
 import ast
+from datetime import date
 from pathlib import Path
+
+# On June 1, 2026, GitHub Copilot transitions all plans (including Student)
+# from request-based "unlimited free models" to token-based AI Credits.
+# Previously free models (like gpt-5-mini or oswe-vscode-prime) will no longer
+# be 100% free; they will drain the monthly student credit pool.
+# This date constant acts as a hard kill switch to prevent unexpected usage.
+USAGE_BASED_BILLING_START_DATE = date(day=1, month=6, year=2026)
 
 ALLOWED_FREE_MODELS = {
     "gpt-5-mini",
@@ -82,6 +90,15 @@ def _extract_declared_models(file_path: Path) -> tuple[set[str], bool]:
 
 
 def test_agents_use_only_allowed_free_models():
+    # Stops the test pipeline if we have crossed into the token-based billing era.
+    if date.today() >= USAGE_BASED_BILLING_START_DATE:
+        raise AssertionError(
+            f"CRITICAL SAFEGUARD: Today is {date.today()}. "
+            "As of June 1, 2026, GitHub Copilot no longer offers unlimited free models. "
+            "All model calls now consume AI credits. CI has been intentionally halted "
+            "to prevent automatic agent tests from burning through your student quota."
+        )
+
     agent_files = _discover_agent_files()
 
     assert agent_files, (
