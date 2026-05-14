@@ -342,11 +342,13 @@ def generate_html():
     </html>
     """
 
-    os.makedirs("gh-pages-build", exist_ok=True)
-    with open("gh-pages-build/index.html", "w") as f:
+    os.makedirs("gh-pages-build/deepeval_results", exist_ok=True)
+    with open("gh-pages-build/deepeval_results/index.html", "w") as f:
         f.write(html_content)
 
-    print("Successfully generated advanced dashboard gh-pages-build/index.html")
+    print(
+        "Successfully generated advanced dashboard gh-pages-build/deepeval_results/index.html"
+    )
 
 
 if __name__ == "__main__":
