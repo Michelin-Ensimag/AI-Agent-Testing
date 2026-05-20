@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Michelin x Ensimag Benchmarking Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mich-blue: #27509b;
+            --mich-light-blue: #eff6ff;
+            --mich-yellow: #fce500;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --border: #e2e8f0;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --purple: #7c3aed;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-dark); line-height: 1.7; display: flex; overflow-x: hidden; }
+
+        /* Bilingual Safe Logic */
+        .fr-text { display: none !important; }
+        body.show-fr .en-text { display: none !important; }
+        body.show-fr .fr-text { display: block !important; }
+        span.fr-text { display: none !important; }
+        body.show-fr span.fr-text { display: inline !important; }
+
+        /* General Layout Fixes for Mobile */
+        p, h1, h2, h3, h4, li { overflow-wrap: break-word; word-break: break-word; -webkit-hyphens: auto; hyphens: auto; }
+
+        /* Sidebar Nav */
+        aside {
+            width: 280px; background: var(--bg-card); border-right: 1px solid var(--border);
+            position: fixed; top: 0; left: 0; bottom: 0; padding: 2rem 0; z-index: 1000; overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+        .logo-area {
+            padding: 0 1.5rem 1.5rem 1.5rem; border-bottom: 4px solid var(--mich-yellow); margin-bottom: 1.5rem; margin-top: -1rem;
+            display: flex; flex-direction: column; gap: 2rem; align-items: center; justify-content: center;
+        }
+        .logo-img {
+            max-width: 100%;
+            max-height: 65px;
+            object-fit: contain;
+            display: block;
+        }
+        .mich-logo {
+            transform: scale(1.2); /* compensate for internal padding */
+        }
+
+        .nav-menu { list-style: none; padding: 0 1rem; }
+        .nav-menu li a {
+            display: block; padding: 0.75rem 1rem; color: var(--text-muted); text-decoration: none;
+            font-size: 0.9rem; font-weight: 500; border-radius: 6px; transition: all 0.2s;
+        }
+        .nav-menu li a:hover { background: var(--mich-light-blue); color: var(--mich-blue); }
+        .nav-menu li a.active { background: var(--mich-light-blue); color: var(--mich-blue); border-left: 3px solid var(--mich-blue); font-weight: 600; }
+
+        /* Mobile Overlay */
+        .sidebar-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+            z-index: 999; display: none; opacity: 0; transition: opacity 0.3s ease;
+        }
+        body.sidebar-open .sidebar-overlay { display: block; opacity: 1; }
+
+        /* Dynamic Shrinking Header */
+        .top-bar {
+            position: fixed; top: 0; left: 280px; right: 0;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;
+            padding: 2rem 3rem; z-index: 50; transition: all 0.3s ease;
+        }
+        .top-bar.scrolled { padding: 0.75rem 3rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+
+        .header-titles { transition: all 0.3s ease; flex: 1; overflow: hidden; }
+        .header-titles h1 { font-size: 2.2rem; color: var(--text-dark); font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; transition: all 0.3s ease; margin-bottom: 0.2rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .header-titles p { font-size: 1.1rem; color: var(--mich-blue); font-weight: 600; margin: 0; transition: all 0.3s ease; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+
+        .top-bar.scrolled .header-titles h1 { font-size: 1.25rem; }
+        .top-bar.scrolled .header-titles p { font-size: 0; opacity: 0; height: 0; overflow: hidden; }
+
+        /* Top Bar Actions (Github + Toggle) */
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+
+        .github-btn {
+            display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; color: var(--text-dark);
+            padding: 6px 14px; border-radius: 30px; text-decoration: none; font-size: 0.85rem; font-weight: 600;
+            border: 1px solid var(--border); transition: all 0.2s; white-space: nowrap;
+        }
+        .github-btn:hover { background: #e2e8f0; }
+        .github-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+        .toggle-btn {
+            display: flex; background: #e2e8f0; border-radius: 30px; padding: 4px;
+            position: relative; cursor: pointer; width: 110px; height: 36px; align-items: center; border: none; outline: none; flex-shrink: 0;
+        }
+        .toggle-bg {
+            position: absolute; width: 50px; height: 28px; background: var(--mich-blue);
+            border-radius: 20px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        body.show-fr .toggle-bg { transform: translateX(52px); }
+        .toggle-label { flex: 1; text-align: center; font-size: 0.8rem; font-weight: 700; z-index: 1; color: #64748b; transition: color 0.3s ease; user-select: none; }
+        body:not(.show-fr) .lbl-en { color: #ffffff; }
+        body.show-fr .lbl-fr { color: #ffffff; }
+
+        /* Mobile Hamburger & Logos */
+        .menu-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dark); margin-right: 1rem; flex-shrink: 0; }
+        .mobile-logos { display: none; }
+
+        /* Main Content */
+        main { flex: 1; margin-left: 280px; padding: 12rem 4rem 4rem; max-width: 1300px; transition: padding 0.3s ease; overflow-x: hidden; width: 100%; }
+
+        section { margin-bottom: 5rem; scroll-margin-top: 100px; }
+        h2 { font-size: 1.6rem; color: var(--mich-blue); margin-bottom: 1.5rem; font-weight: 800; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.2rem; margin: 2rem 0 0.5rem; color: var(--text-dark); font-weight: 700; }
+        h4 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; color: var(--text-dark); }
+        p { margin-bottom: 1.2rem; }
+        ul, ol { margin: 0 0 1.5rem 2rem; }
+        li { margin-bottom: 0.5rem; }
+
+        .table-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; }
+
+        /* Professional 5 Axes Grid */
+        .axes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .axis-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--mich-blue);
+            padding: 1.25rem;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .axis-card h4 { color: var(--text-dark); margin-top: 0; margin-bottom: 0.5rem; font-size: 0.95rem; }
+        .axis-card p { font-size: 0.85rem; margin: 0; color: var(--text-muted); line-height: 1.5; }
+
+        /* Callouts & Example Boxes */
+        .info-callout { background: #f0fdf4; border-left: 4px solid var(--success); padding: 1.25rem 1.5rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+        .info-callout h4 { margin-top: 0; color: var(--success); }
+        .warning-callout { background: #fffbeb; border-left: 4px solid var(--warning); padding: 1.25rem 1.5rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0; }
+        .warning-callout h4 { margin-top: 0; color: var(--warning); }
+        .prompt-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #334155; margin-bottom: 1rem; display: flex; gap: 0.75rem; align-items: center; }
+        .prompt-box::before { content: "›"; color: var(--mich-blue); font-size: 1.5rem; font-weight: bold; line-height: 1; }
+
+        /* Compact Vertical Leaderboard */
+        .compact-leaderboard { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .lb-row { display: grid; grid-template-columns: 60px 1.5fr 3fr 1fr 1fr; gap: 1rem; padding: 1rem 1.5rem; align-items: center; border-bottom: 1px solid var(--border); }
+        .lb-row:last-child { border-bottom: none; }
+        .lb-header { background: #f8fafc; font-weight: 700; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .lb-rank { font-size: 1.5rem; font-weight: 800; color: var(--border); text-align: center; }
+        .lb-row:nth-child(2) .lb-rank { color: var(--mich-yellow); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .lb-agent h4 { margin: 0; color: var(--mich-blue); font-size: 1rem; }
+        .lb-agent span { font-size: 0.8rem; color: var(--text-muted); }
+        .lb-desc { font-size: 0.85rem; color: var(--text-muted); margin: 0; line-height: 1.4; }
+
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-align: center; }
+        .bg-green { background: #dcfce7; color: #166534; }
+        .bg-yellow { background: #fef9c3; color: #854d0e; }
+        .bg-red { background: #fee2e2; color: #991b1b; }
+        .bg-gray { background: #f1f5f9; color: #475569; }
+
+        /* Clean CSS Tables - Perfected Headers */
+        .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0.5rem 0 2rem 0; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        table { width: 100%; border-collapse: collapse; text-align: left; background: var(--bg-card); font-size: 0.85rem; min-width: 700px; }
+        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+
+        /* Strict Solid Blue Table Headers */
+        th { background: var(--mich-blue) !important; font-weight: 600; color: #ffffff !important; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; border: none; }
+
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #f8fafc; }
+        .group-header td { background: #e2e8f0; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mich-blue); }
+
+        /* Subtle Body Highlights (Targeting TD only) */
+        td.col-highlight { background: #fdfdfd; border-left: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; }
+        td.target-col { font-weight: 700; background: #eff6ff; color: var(--mich-blue); }
+
+        .t-acc { color: var(--success); font-weight: 600; }
+        .t-inacc { color: var(--danger); font-weight: 600; }
+        .t-unsup { color: var(--warning); font-weight: 600; }
+        .t-err { color: var(--purple); font-weight: 600; }
+
+        /* Authors & Acknowledgements Vertical List */
+        .team-intro { background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .team-intro p { margin: 0; font-size: 0.95rem; color: var(--text-dark); line-height: 1.6; }
+
+        .team-list { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 3rem; }
+        .team-member { display: flex; align-items: center; padding: 1rem 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); gap: 1.5rem; }
+        .user-icon { width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: var(--mich-blue); flex-shrink: 0; }
+        .user-icon svg { width: 20px; height: 20px; }
+        .team-details { flex: 1; }
+        .team-details h4 { margin: 0; font-size: 1.1rem; color: var(--text-dark); }
+
+        .social-links { display: flex; gap: 0.75rem; align-items: center; }
+        .social-links a { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: 4px; text-decoration: none; transition: background 0.2s; }
+        .link-li { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .link-li:hover { background: #dbeafe; }
+        .link-gh { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+        .link-gh:hover { background: #e2e8f0; }
+
+        /* Acknowledgements Card */
+        .ack-card { background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--mich-yellow); padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .ack-card p { font-size: 0.95rem; line-height: 1.7; color: var(--text-dark); margin-bottom: 1.5rem; }
+
+        @media (max-width: 1024px) {
+            .lb-row { grid-template-columns: 40px 1fr 2fr 1fr; }
+            .lb-row .lb-desc { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            aside { transform: translateX(-100%); }
+            body.sidebar-open aside { transform: translateX(0); }
+
+            .top-bar { left: 0; padding: 1rem 1.5rem; justify-content: flex-start; }
+            .top-bar.scrolled { padding: 0.75rem 1.5rem; }
+            .menu-toggle { display: block; }
+
+            /* Clean Mobile Header */
+            .header-titles h1, .header-titles p { white-space: normal; overflow: visible; }
+            .header-titles h1 { font-size: 1.1rem; }
+            .top-bar.scrolled .header-titles h1 { font-size: 1.0rem; }
+            .header-titles p.subtitle { display: none !important; }
+
+            .github-btn span { display: none; }
+
+            main { margin-left: 0; padding: 6.5rem 1rem 2rem; }
+
+            .mobile-logos { display: flex; gap: 1.5rem; margin-top: 1rem; margin-bottom: 1rem; align-items: center; justify-content: space-between; padding: 0 1rem; }
+            .mobile-logos .logo-img { max-height: 50px; max-width: 45%; }
+            .mobile-logos .mich-logo { transform: scale(1.15); }
+
+            /* Mobile Leaderboard Redesign: Stacked Cards */
+            .lb-header { display: none; }
+            .lb-row { display: flex; flex-direction: column; align-items: flex-start; padding: 1.25rem; position: relative; border-bottom: 1px solid var(--border); }
+            .lb-row .lb-rank { position: absolute; top: 1.25rem; right: 1.25rem; font-size: 1.8rem; line-height: 1; }
+            .lb-agent h4 { font-size: 1.1rem; margin-bottom: 0.2rem; }
+            .lb-desc { display: block; margin-top: 0.75rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
+            .lb-row div:nth-child(4) { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; }
+
+            /* Mobile Tables formatting for HCI scrolling */
+            .table-wrap { margin-left: -1rem; margin-right: -1rem; width: calc(100% + 2rem); border-radius: 0; border-left: none; border-right: none; }
+            table { min-width: 600px; font-size: 0.8rem; }
+            th, td { padding: 0.6rem 0.75rem; }
+
+            .team-member { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .social-links { flex-wrap: wrap; }
+            .ack-card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body class="lang-en">
+
+    <div class="sidebar-overlay"></div>
+
+    <aside>
+        <div class="logo-area">
+            <img class="logo-img mich-logo" src="assets/images/michelin-logo.png" alt="Michelin Logo">
+            <img class="logo-img" src="assets/images/ensimag-logo.png" alt="Ensimag Logo">
+        </div>
+        <ul class="nav-menu" id="nav-menu">
+            <li><a href="#intro" class="active"><span class="en-text">Executive Summary</span><span class="fr-text">Résumé Exécutif</span></a></li>
+            <li><a href="#leaderboard"><span class="en-text">Agent Leaderboard</span><span class="fr-text">Classement des Agents</span></a></li>
+            <li><a href="#methodology"><span class="en-text">Methodology</span><span class="fr-text">Méthodologie</span></a></li>
+            <li><a href="#deepeval"><span class="en-text">Phase 2: DeepEval</span><span class="fr-text">Phase 2: DeepEval</span></a></li>
+            <li><a href="#adk-results"><span class="en-text">Phase 3: ADK Results</span><span class="fr-text">Phase 3: Résultats ADK</span></a></li>
+            <li><a href="#openclaw"><span class="en-text">OpenClaw Stack</span><span class="fr-text">Stack OpenClaw</span></a></li>
+            <li><a href="#discussion"><span class="en-text">Discussion & Limits</span><span class="fr-text">Discussion & Limites</span></a></li>
+            <li><a href="#conclusion"><span class="en-text">Conclusion</span><span class="fr-text">Conclusion</span></a></li>
+            <li><a href="#team"><span class="en-text">Research Team</span><span class="fr-text">Équipe de Recherche</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="top-bar" id="main-header">
+        <button class="menu-toggle" id="menu-btn">☰</button>
+        <div class="header-titles">
+            <h1 class="en-text">AI Agent Evaluation & Benchmarking</h1>
+            <h1 class="fr-text">Évaluation et Benchmarking d'Agents IA</h1>
+            <p class="subtitle en-text">Robustness Analysis, Reliability, and Hallucination Detection</p>
+            <p class="subtitle fr-text">Analyse de Robustesse, Fiabilité et Détection d'Hallucinations</p>
+        </div>
+        <div class="header-actions">
+            <a href="https://github.com/Michelin-Ensimag/AI-Agent-Testing" class="github-btn" target="_blank" title="View Source on GitHub">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                <span>GitHub Repo</span>
+            </a>
+            <button class="toggle-btn" onclick="document.body.classList.toggle('show-fr')">
+                <div class="toggle-bg"></div>
+                <div class="toggle-label lbl-en">EN</div>
+                <div class="toggle-label lbl-fr">FR</div>
+            </button>
+        </div>
+    </div>
+
+    <main>
+        <div class="mobile-logos">
+            <img class="logo-img mich-logo" src="assets/images/michelin-logo.png" alt="Michelin Logo">
+            <img class="logo-img" src="assets/images/ensimag-logo.png" alt="Ensimag Logo">
+        </div>
+
+        <section id="intro">
+            <h2 class="en-text">Executive Summary & Problem Space</h2>
+            <h2 class="fr-text">Résumé Exécutif et Problème</h2>
+
+            <div class="en-text">
+                <p>The integration of generative AI into industrial processes requires measurable trust. Google's Agent-to-Agent (A2A) protocol and Anthropic's Model Context Protocol (MCP) have emerged as orchestration standards, allowing agents to interact with real-world tools. However, this introduces severe risks: agents acting on real systems based on hallucinated reasoning.</p>
+                <p>We prioritize <em>consistency</em> (stable decision-making over iterations) rather than strict <em>determinism</em>. To accurately benchmark this consistency, we developed a testing protocol around 5 distinct hallucination axes.</p>
+            </div>
+            <div class="fr-text">
+                <p>L'intégration de l'IA générative dans les processus industriels nécessite une confiance mesurable. Les protocoles A2A (Google) et MCP (Anthropic) sont devenus des standards d'orchestration, permettant aux agents d'interagir avec des outils réels. Cependant, cela introduit des risques majeurs : des agents agissant sur des systèmes réels en se basant sur un raisonnement halluciné.</p>
+                <p>Nous privilégions la <em>consistance</em> (stabilité des décisions) au <em>déterminisme</em> strict. Pour évaluer cette consistance, nous avons développé un protocole de test structuré autour de 5 axes d'hallucination.</p>
+            </div>
+
+            <h3 class="en-text">The 5 Axes of Hallucination Testing</h3>
+            <h3 class="fr-text">Les 5 Axes de Test d'Hallucination</h3>
+
+            <div class="axes-grid">
+                <div class="axis-card">
+                    <h4><span class="en-text">1. Established Facts</span><span class="fr-text">1. Faits Avérés</span></h4>
+                    <p><span class="en-text">Validating basic scientific truths without inventing data.</span><span class="fr-text">Valider des vérités scientifiques sans inventer de données.</span></p>
+                </div>
+                <div class="axis-card">
+                    <h4><span class="en-text">2. Rare Facts</span><span class="fr-text">2. Faits Rares</span></h4>
+                    <p><span class="en-text">Testing specialized topics. Silence (Unsupported) is preferred over invention.</span><span class="fr-text">Sujets spécialisés. Le silence (Unsupported) est préféré à l'invention.</span></p>
+                </div>
+                <div class="axis-card">
+                    <h4><span class="en-text">3. Fallacies</span><span class="fr-text">3. Sophismes</span></h4>
+                    <p><span class="en-text">Testing logical robustness against contradictory or flawed reasoning.</span><span class="fr-text">Tester la robustesse logique face aux raisonnements contradictoires.</span></p>
+                </div>
+                <div class="axis-card">
+                    <h4><span class="en-text">4. Temporality</span><span class="fr-text">4. Temporalité</span></h4>
+                    <p><span class="en-text">Ensuring the agent respects its knowledge cutoff and does not extrapolate.</span><span class="fr-text">S'assurer que l'agent respecte son cutoff sans extrapoler l'actualité.</span></p>
+                </div>
+                <div class="axis-card">
+                    <h4><span class="en-text">5. Noise & Bias</span><span class="fr-text">5. Bruit & Biais</span></h4>
+                    <p><span class="en-text">Robustness against typos, SMS formatting, and biased inputs.</span><span class="fr-text">Robustesse face aux fautes, formats SMS, et requêtes biaisées.</span></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="leaderboard">
+            <h2 class="en-text">Table 1: Agent Leaderboard (ADK Stack Synthesis)</h2>
+            <h2 class="fr-text">Tableau 1: Classement des Agents (Synthèse ADK)</h2>
+            <p class="en-text">A compact synthesis ranking the 6 functional fact-checker endpoints based on their complete hallucination risk profiles. Note: EP1 is ranked last due to a critical configuration failure.</p>
+            <p class="fr-text">Une synthèse compacte classant les 6 endpoints fact-checkers fonctionnels selon leur profil de risque d'hallucination. Note: EP1 est classé dernier suite à une erreur de configuration critique.</p>
+
+            <div class="compact-leaderboard">
+                <div class="lb-row lb-header">
+                    <div>Rank</div>
+                    <div>Endpoint & Arch</div>
+                    <div class="lb-desc">Key Characteristic</div>
+                    <div>Avg Latency</div>
+                    <div>Risk Profile</div>
+                </div>
+
+                <div class="lb-row">
+                    <div class="lb-rank">1</div>
+                    <div class="lb-agent"><h4>EP4</h4><span>2 critics + synthesis</span></div>
+                    <p class="lb-desc en-text">Excellent reliability. Active, stable, 0 timeouts. High source usage.</p>
+                    <p class="lb-desc fr-text">Excellente fiabilité. Actif, stable, 0 timeout. Forte utilisation des sources.</p>
+                    <div style="font-family: monospace;">40s</div>
+                    <div><span class="badge bg-green">Lowest Risk</span></div>
+                </div>
+
+                <div class="lb-row">
+                    <div class="lb-rank">2</div>
+                    <div class="lb-agent"><h4>EP2</h4><span>Sequential (gpt-5-mini)</span></div>
+                    <p class="lb-desc en-text">Low hallucination risk but severely penalized by massive timeouts.</p>
+                    <p class="lb-desc fr-text">Faible risque d'hallucination mais lourdement pénalisé par des timeouts massifs.</p>
+                    <div style="font-family: monospace; color: var(--danger);">97s</div>
+                    <div><span class="badge bg-yellow">Medium Risk</span></div>
+                </div>
+
+                <div class="lb-row">
+                    <div class="lb-rank">3</div>
+                    <div class="lb-agent"><h4>EP3</h4><span>Skeptical critic</span></div>
+                    <p class="lb-desc en-text">Creates artificial doubt. Contests established facts unnecessarily.</p>
+                    <p class="lb-desc fr-text">Crée un doute artificiel. Conteste inutilement des faits établis.</p>
+                    <div style="font-family: monospace;">80s</div>
+                    <div><span class="badge bg-yellow">Medium Risk</span></div>
+                </div>
+
+                <div class="lb-row">
+                    <div class="lb-rank">4</div>
+                    <div class="lb-agent"><h4>EP5</h4><span>Sequential + Wiki</span></div>
+                    <p class="lb-desc en-text">Permissive architecture. High logical risk; fails to detect fallacies.</p>
+                    <p class="lb-desc fr-text">Architecture permissive. Fort risque logique ; ne détecte pas les sophismes.</p>
+                    <div style="font-family: monospace;">57s</div>
+                    <div><span class="badge bg-red">High Risk</span></div>
+                </div>
+
+                <div class="lb-row">
+                    <div class="lb-rank">5</div>
+                    <div class="lb-agent"><h4>EP0</h4><span>Sequential + DDG</span></div>
+                    <p class="lb-desc en-text">Active hallucinations on popular facts. Frequently confidently incorrect.</p>
+                    <p class="lb-desc fr-text">Hallucinations actives sur les faits populaires. Souvent confiant mais faux.</p>
+                    <div style="font-family: monospace;">41s</div>
+                    <div><span class="badge bg-red">Highest Risk</span></div>
+                </div>
+
+                <div class="lb-row">
+                    <div class="lb-rank" style="color:var(--text-muted);">X</div>
+                    <div class="lb-agent"><h4>EP1</h4><span>Config Error</span></div>
+                    <p class="lb-desc en-text">Completely broken (LLM provider missing). Crashes immediately.</p>
+                    <p class="lb-desc fr-text">Totalement cassé (fournisseur LLM manquant). Plante immédiatement.</p>
+                    <div style="font-family: monospace;">1.1s (Err)</div>
+                    <div><span class="badge bg-gray">Broken</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="methodology">
+            <h2 class="en-text">Methodology Overview</h2>
+            <h2 class="fr-text">Aperçu de la Méthodologie</h2>
+            <div class="en-text">
+                <p>Testing was broken down chronologically to ensure a rigorous, scalable testing environment:</p>
+                <ul>
+                    <li><strong>Step 1: Internal Construction.</strong> We used LangChain, LangGraph, and FastMCP to build internal agents (press and financial strategy) to fully understand orchestration boundaries and tool integration.</li>
+                    <li><strong>Step 2: Validation via DeepEval.</strong> Before judging third-party endpoints, we instrumented the DeepEval framework on our internal agents. We validated that the GPT-4.1 LLM Judge was highly consistent across iterations.</li>
+                    <li><strong>Step 3: Black-Box Exploration.</strong> We conducted a manual black-box exploration of 15 Michelin tutor endpoints, mapping their tools and executing the 18-scenario testing matrix across all hallucination axes.</li>
+                </ul>
+            </div>
+            <div class="fr-text">
+                <p>Les tests ont été divisés chronologiquement pour garantir un environnement de test rigoureux :</p>
+                <ul>
+                    <li><strong>Étape 1 : Construction Interne.</strong> Nous avons utilisé LangChain, LangGraph et FastMCP pour construire des agents internes (presse et finance) afin de comprendre les limites de l'orchestration.</li>
+                    <li><strong>Étape 2 : Validation via DeepEval.</strong> Avant de juger les endpoints tiers, nous avons instrumenté le framework DeepEval sur nos propres agents. Nous avons validé la consistance du juge LLM GPT-4.1.</li>
+                    <li><strong>Étape 3 : Exploration en Boîte Noire.</strong> Nous avons exploré manuellement 15 endpoints Michelin pour cartographier leurs outils et exécuter la matrice de test de 18 scénarios sur tous les axes d'hallucination.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="deepeval">
+            <h2 class="en-text">Phase 2: Validating DeepEval & Internal Agents</h2>
+            <h2 class="fr-text">Phase 2: Validation DeepEval et Agents Internes</h2>
+
+            <div class="en-text">
+                <p>Before auditing third-party endpoints, we used two key DeepEval metrics to evaluate our internal agents: <strong>Task Completion (TC)</strong> evaluates if the agent fulfilled the user's prompt, and <strong>G-Eval Strategy</strong> is a custom LLM-as-a-judge metric we defined to grade the specific reasoning steps.</p>
+                <div class="prompt-box">Example Prompt (Financial Agent): "Should I buy AAPL stock today based on its SMA and RSI indicators?"</div>
+            </div>
+            <div class="fr-text">
+                <p>Avant d'auditer les tiers, nous avons utilisé deux métriques DeepEval clés: <strong>Task Completion (TC)</strong> qui évalue si l'agent a rempli la demande, et <strong>G-Eval Strategy</strong>, une métrique personnalisée pour noter les étapes de raisonnement.</p>
+                <div class="prompt-box">Exemple de Prompt: "Dois-je acheter l'action AAPL aujourd'hui en fonction de ses indicateurs SMA et RSI ?"</div>
+            </div>
+
+            <h3 class="en-text">Table 2: LLM Judge Consistency</h3>
+            <h3 class="fr-text">Tableau 2: Consistance du juge LLM</h3>
+            <p class="table-desc en-text">Shows the variance of the GPT-4.1 judge when grading the exact same output across 10 independent iterations. Low variance ensures a stable CI/CD judge.</p>
+            <p class="table-desc fr-text">Montre la variance du juge GPT-4.1 lors de la notation d'un même output sur 10 itérations. Une faible variance garantit un juge CI/CD stable.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span class="en-text">Test Scenario</span><span class="fr-text">Scénario de Test</span></th>
+                            <th>TC &mu; (Mean)</th>
+                            <th>TC &sigma;&sup2; (Variance)</th>
+                            <th>G-Eval &mu; (Mean)</th>
+                            <th>G-Eval &sigma;&sup2; (Variance)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>test_1 (AAPL)</td><td class="col-highlight">0.950</td><td>0.00123</td><td class="col-highlight">0.900</td><td>0.00000</td></tr>
+                        <tr><td>test_2 (Stop Loss)</td><td class="col-highlight">1.000</td><td>0.00000</td><td class="col-highlight">0.990</td><td>0.00090</td></tr>
+                        <tr><td>test_3 (Concentration Risk)</td><td class="col-highlight">0.975</td><td>0.00063</td><td class="col-highlight">0.980</td><td>0.00160</td></tr>
+                        <tr><td>test_4 (AI Threat)</td><td class="col-highlight">0.930</td><td>0.00183</td><td class="col-highlight">0.770</td><td>0.00210</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="en-text">Table 3: LLM Model Comparison for the Judge</h3>
+            <h3 class="fr-text">Tableau 3: Comparaison des modèles LLM pour le jugement</h3>
+            <p class="table-desc en-text">Comparing which underlying model performs best as the DeepEval "Judge". GPT-4.1 provided the most reliable scoring logic without massive quota costs.</p>
+            <p class="table-desc fr-text">Comparaison du modèle sous-jacent le plus performant comme "Juge" DeepEval. GPT-4.1 offre la notation la plus fiable sans coûts de quota massifs.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Test</th>
+                            <th>GPT-4.1 (TC)</th><th>GPT-4.1 (GE)</th>
+                            <th>GPT-5-mini (TC)</th><th>GPT-5-mini (GE)</th>
+                            <th>GPT-5.2 (TC)</th><th>GPT-5.2 (GE)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>test_1</td><td>0.95</td><td class="col-highlight">0.90</td><td>0.85</td><td class="col-highlight">0.40</td><td>0.83</td><td class="col-highlight">0.70</td></tr>
+                        <tr><td>test_2</td><td>1.00</td><td class="col-highlight">0.95</td><td>0.85</td><td class="col-highlight">0.90</td><td>0.75</td><td class="col-highlight">0.90</td></tr>
+                        <tr><td>test_3</td><td>0.95</td><td class="col-highlight">0.95</td><td>0.80</td><td class="col-highlight">0.80</td><td>0.90</td><td class="col-highlight">0.70</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="en-text">Table 4: Robustness of Internal Financial Agent</h3>
+            <h3 class="fr-text">Tableau 4: Robustesse de l'agent financier interne</h3>
+            <p class="table-desc en-text">Testing our internal agent against degraded inputs (spelling errors, missing parameters) to baseline expected behavior.</p>
+            <p class="table-desc fr-text">Test de notre agent interne face à des entrées dégradées (fautes, paramètres manquants) pour établir un comportement de référence.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span class="en-text">Test Suite</span><span class="fr-text">Suite de test</span></th>
+                            <th><span class="en-text">Score</span><span class="fr-text">Score</span></th>
+                            <th><span class="en-text">Observation</span><span class="fr-text">Observation</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Test Agent Answers</td><td class="col-highlight t-acc">1.00</td><td><span class="en-text">Perfect success on clear instructions</span><span class="fr-text">Réussite parfaite sur instructions claires</span></td></tr>
+                        <tr><td>Test Prompt (Typos)</td><td class="col-highlight t-unsup">0.85</td><td><span class="en-text">Slight drop facing spelling errors</span><span class="fr-text">Légère baisse face aux fautes</span></td></tr>
+                        <tr><td>Test Consistency</td><td class="col-highlight t-unsup">0.51</td><td><span class="en-text">Notable variability across multiple runs</span><span class="fr-text">Variabilité notable sur plusieurs lancements</span></td></tr>
+                        <tr><td>Test Agent Pred Prompt</td><td class="col-highlight t-inacc">0.23</td><td><span class="en-text">Major failure on edge cases without ticker</span><span class="fr-text">Échec majeur sur edge cases sans ticker</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="adk-results">
+            <h2 class="en-text">Phase 3: ADK Endpoints Evaluation Data</h2>
+            <h2 class="fr-text">Phase 3: Données d'Évaluation Endpoints ADK</h2>
+
+            <div class="warning-callout">
+                <h4 class="en-text">Critical Context: Manual Testing</h4>
+                <h4 class="fr-text">Contexte Critique: Test Manuel</h4>
+                <p class="en-text">While DeepEval was successfully validated in Phase 2, the 15 Michelin endpoints in Phase 3 had to be audited <strong>manually</strong> (black-box probing). This manual classification of verdicts is time-consuming and prone to human bias, directly supporting our conclusion regarding the necessity of DeepEval CI/CD automation.</p>
+                <p class="fr-text">Bien que DeepEval ait été validé en Phase 2, les 15 endpoints Michelin en Phase 3 ont été audités <strong>manuellement</strong> (sondage boîte noire). Cette classification manuelle est chronophage et sujette aux biais, appuyant notre conclusion sur la nécessité d'une automatisation CI/CD via DeepEval.</p>
+            </div>
+
+            <div class="en-text">
+                <p>The following tests evaluated the 6 fact-checking ADK endpoints against the 5 Hallucination Axes.</p>
+                <div class="prompt-box">Example Prompt (Historical Fact): "Was the Mona Lisa painted by Michelangelo?"</div>
+            </div>
+            <div class="fr-text">
+                <p>Les tests suivants ont évalué les 6 endpoints fact-checkers ADK selon les 5 axes d'hallucination.</p>
+                <div class="prompt-box">Exemple de Prompt (Fait historique): "La Joconde a-t-elle été peinte par Michel-Ange ?"</div>
+            </div>
+
+            <h3 class="en-text">Table 5: ADK Agent Configurations</h3>
+            <h3 class="fr-text">Tableau 5: Configurations des agents ADK</h3>
+            <p class="table-desc en-text">The declared architectures and models of the 6 Fact-checker endpoints (Stack 1).</p>
+            <p class="table-desc fr-text">Les architectures et modèles déclarés des 6 endpoints Fact-checkers (Stack 1).</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span class="en-text">Endpoint</span><span class="fr-text">Endpoint</span></th>
+                            <th><span class="en-text">Model</span><span class="fr-text">Modèle</span></th>
+                            <th><span class="en-text">Architecture</span><span class="fr-text">Architecture</span></th>
+                            <th><span class="en-text">Search Tool</span><span class="fr-text">Outil Web</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>EP0 (a2a)</td><td>gpt-4.1</td><td>Sequential Standard</td><td>DuckDuckGo</td></tr>
+                        <tr><td>EP1 (a2a-1)</td><td>oswe-vscode-prime</td><td>Sequential</td><td>DuckDuckGo</td></tr>
+                        <tr><td>EP2 (a2a-2)</td><td>gpt-5-mini</td><td>Sequential</td><td>DuckDuckGo</td></tr>
+                        <tr><td>EP3 (a2a-3)</td><td>gpt-4.1</td><td>Skeptical Critic</td><td>DuckDuckGo</td></tr>
+                        <tr style="background:#eff6ff;"><td><strong>EP4 (a2a-4)</strong></td><td><strong>gpt-4.1</strong></td><td><strong>2 Critics + Synthesis</strong></td><td><strong>DuckDuckGo</strong></td></tr>
+                        <tr><td>EP5 (a2a-5)</td><td>gpt-4.1</td><td>Sequential</td><td>Wikipedia</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-callout" style="background: #f8fafc; border-left-color: var(--mich-blue);">
+                <h4 class="en-text" style="color:var(--mich-blue);">Verdict Legend</h4>
+                <h4 class="fr-text" style="color:var(--mich-blue);">Légende des Verdicts</h4>
+                <p class="en-text" style="margin:0; font-size:0.9rem;"><strong>ACC (Accurate):</strong> Correct, factual answer.<br><strong>INACC (Inaccurate):</strong> Hallucination, generating a false statement.<br><strong>UNSUP (Unsupported):</strong> Agent safely refused to answer due to lack of knowledge (a healthy behavior for rare facts).<br><strong>ERR:</strong> Internal crash or massive timeout.</p>
+                <p class="fr-text" style="margin:0; font-size:0.9rem;"><strong>ACC (Précis):</strong> Réponse correcte et factuelle.<br><strong>INACC (Inexact):</strong> Hallucination, affirmation fausse.<br><strong>UNSUP (Non supporté):</strong> L'agent refuse de répondre par manque de connaissances (comportement sain).<br><strong>ERR:</strong> Crash ou timeout massif.</p>
+            </div>
+
+            <h3 class="en-text">Table 6: Master Hallucination Analysis Matrix</h3>
+            <h3 class="fr-text">Tableau 6: Matrice Centrale d'Analyse d'Hallucinations</h3>
+            <p class="table-desc en-text">Consolidated testing across 4 primary axes. Note the <strong>Target Verdict</strong> column: INACC (Inaccurate) is actually the <em>desired</em> outcome for Fallacies, meaning the agent successfully rejected the flawed premise.</p>
+            <p class="table-desc fr-text">Tests consolidés sur 4 axes. Notez la colonne <strong>Verdict Cible</strong> : INACC (Inexact) est le résultat <em>désiré</em> pour les Sophismes, signifiant que l'agent a rejeté la fausse prémisse.</p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span class="en-text">Test Axis</span><span class="fr-text">Axe de Test</span></th>
+                            <th>Agent</th>
+                            <th><span class="en-text">Target Verdict</span><span class="fr-text">Verdict Cible</span></th>
+                            <th><span class="en-text">Accurate</span><span class="fr-text">Précis</span></th>
+                            <th><span class="en-text">Inaccurate</span><span class="fr-text">Inexact</span></th>
+                            <th><span class="en-text">Unsupported</span><span class="fr-text">Non Supporté</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="group-header"><td colspan="6"><span class="en-text">1. Established Scientific Facts</span><span class="fr-text">1. Faits Scientifiques Établis</span></td></tr>
+                        <tr><td></td><td>EP0</td><td class="target-col">ACC</td><td class="t-acc">100%</td><td>0%</td><td>0%</td></tr>
+                        <tr><td></td><td>EP2</td><td class="target-col">ACC</td><td>28.6%</td><td>0%</td><td class="t-unsup">71.4%</td></tr>
+                        <tr><td></td><td>EP4</td><td class="target-col">ACC</td><td class="t-acc">100%</td><td>0%</td><td>0%</td></tr>
+                        <tr><td></td><td>EP5</td><td class="target-col">ACC</td><td>42.9%</td><td>0%</td><td class="t-unsup">57.1%</td></tr>
+
+                        <tr class="group-header"><td colspan="6"><span class="en-text">2. Rare / Obscure Facts</span><span class="fr-text">2. Faits Rares / Obscurs</span></td></tr>
+                        <tr><td></td><td>EP0</td><td class="target-col">UNSUP</td><td>57.1%</td><td>0%</td><td class="t-unsup">42.9%</td></tr>
+                        <tr><td></td><td>EP3</td><td class="target-col">UNSUP</td><td>0%</td><td>0%</td><td class="t-unsup">85.7%</td></tr>
+                        <tr><td></td><td>EP4</td><td class="target-col">UNSUP</td><td>100%</td><td>0%</td><td>0%</td></tr>
+
+                        <tr class="group-header"><td colspan="6"><span class="en-text">3. Fallacies / Logical Flaws</span><span class="fr-text">3. Sophismes / Failles Logiques</span></td></tr>
+                        <tr><td></td><td>EP0</td><td class="target-col">INACC</td><td>14.3%</td><td class="t-inacc">85.7%</td><td>0%</td></tr>
+                        <tr><td></td><td>EP3</td><td class="target-col">INACC</td><td>0%</td><td>0%</td><td class="t-unsup">85.7%</td></tr>
+                        <tr><td></td><td>EP4</td><td class="target-col">INACC</td><td>28.6%</td><td class="t-inacc">57.1%</td><td>14.3%</td></tr>
+
+                        <tr class="group-header"><td colspan="6"><span class="en-text">4a. Temporality: Historical Facts</span><span class="fr-text">4a. Temporalité : Faits Historiques</span></td></tr>
+                        <tr><td></td><td>EP0</td><td class="target-col">ACC</td><td class="t-acc">85.7%</td><td>14.3%</td><td>0%</td></tr>
+                        <tr><td></td><td>EP4</td><td class="target-col">ACC</td><td class="t-acc">100%</td><td>0%</td><td>0%</td></tr>
+
+                        <tr class="group-header"><td colspan="6"><span class="en-text">4b. Temporality: Recent News (2024-2026)</span><span class="fr-text">4b. Temporalité : Actualité Récente (2024-2026)</span></td></tr>
+                        <tr><td></td><td>EP0</td><td class="target-col">UNSUP</td><td>14.3%</td><td>28.6%</td><td class="t-unsup">28.6%</td></tr>
+                        <tr><td></td><td>EP4</td><td class="target-col">UNSUP</td><td>28.6%</td><td>28.6%</td><td class="t-unsup">42.9%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="en-text">Table 7: Key Scenario Verdict Matrix</h3>
+            <h3 class="fr-text">Tableau 7: Matrice des Verdicts sur Scénarios Clés</h3>
+            <p class="table-desc en-text">A direct comparison of how different endpoints responded to the exact same prompt.</p>
+            <p class="table-desc fr-text">Une comparaison directe de la réponse des différents endpoints au même prompt exact.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span class="en-text">Category</span><span class="fr-text">Catégorie</span></th>
+                            <th><span class="en-text">Scenario</span><span class="fr-text">Scénario</span></th>
+                            <th>EP0</th><th>EP2</th><th>EP3</th><th>EP4</th><th>EP5</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="en-text">Simple Fact</span><span class="fr-text">Fait Simple</span></td><td><span class="en-text">Capital France = Paris</span><span class="fr-text">Capitale France = Paris</span></td><td class="t-acc">ACC</td><td class="t-unsup">UNSUP</td><td class="t-acc">ACC</td><td class="t-acc">ACC</td><td class="t-acc">ACC</td></tr>
+                        <tr><td><span class="en-text">False Fact</span><span class="fr-text">Fait Faux</span></td><td><span class="en-text">Capital Australia = Sydney</span><span class="fr-text">Capitale Australie = Sydney</span></td><td class="t-inacc">INACC</td><td class="t-unsup">UNSUP</td><td class="t-unsup">UNSUP</td><td class="t-inacc">INACC</td><td class="t-unsup">UNSUP</td></tr>
+                        <tr><td><span class="en-text">Recent News</span><span class="fr-text">Actualité</span></td><td><span class="en-text">OpenAI flagship GPT-3</span><span class="fr-text">OpenAI flagship GPT-3</span></td><td class="t-inacc">INACC</td><td class="t-acc">ACC</td><td class="t-unsup">UNSUP</td><td class="t-inacc">INACC</td><td class="t-inacc">INACC</td></tr>
+                        <tr><td><span class="en-text">Noise</span><span class="fr-text">Bruit</span></td><td><span class="en-text">Capital Germany (SMS)</span><span class="fr-text">Capitale Allemagne (SMS)</span></td><td class="t-unsup">UNSUP</td><td class="t-err">ERR</td><td class="t-err">ERR</td><td class="t-acc">ACC</td><td class="t-unsup">UNSUP</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="en-text">Table 8: Global Verdicts & Latency Breakdown</h3>
+            <h3 class="fr-text">Tableau 8: Verdicts Globaux & Latence</h3>
+            <p class="table-desc en-text">Total verdict counts across all 18 scenarios, plus the critical average latency metrics.</p>
+            <p class="table-desc fr-text">Total des verdicts sur les 18 scénarios, plus les métriques critiques de latence moyenne.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>ACC</th>
+                            <th>INACC</th>
+                            <th>UNSUP</th>
+                            <th>ERR/DISP</th>
+                            <th><span class="en-text">Avg Latency</span><span class="fr-text">Latence Moy.</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>EP0</td><td>7</td><td>7</td><td>3</td><td>1</td><td class="col-highlight">41,263 ms</td></tr>
+                        <tr><td>EP1</td><td>0</td><td>0</td><td>18</td><td>0</td><td class="col-highlight t-inacc">1,149 ms (Err)</td></tr>
+                        <tr><td>EP2</td><td>4</td><td>0</td><td>6</td><td>8</td><td class="col-highlight t-inacc">96,988 ms</td></tr>
+                        <tr><td>EP3</td><td>1</td><td>1</td><td>9</td><td>7</td><td class="col-highlight t-unsup">80,306 ms</td></tr>
+                        <tr style="background:#eff6ff;"><td><strong>EP4</strong></td><td><strong>11</strong></td><td><strong>7</strong></td><td><strong>0</strong></td><td><strong>0</strong></td><td class="col-highlight" style="font-weight:700; color:var(--success);">39,512 ms</td></tr>
+                        <tr><td>EP5</td><td>5</td><td>3</td><td>10</td><td>0</td><td class="col-highlight">57,180 ms</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="openclaw">
+            <h2 class="en-text">OpenClaw Generalist Stack Cartography</h2>
+            <h2 class="fr-text">Cartographie de la Stack OpenClaw</h2>
+
+            <p class="en-text">The 9 generalist OpenClaw endpoints (Stack 2) could not be fully benchmarked on hallucination due to severe rate limits and authentication failures. Below displays the results of our active tool-mapping probes.</p>
+            <p class="fr-text">Les 9 endpoints généralistes OpenClaw (Stack 2) n'ont pas pu être totalement évalués sur l'hallucination suite à des limites de taux et d'authentification. Voici les résultats de notre sondage d'outils.</p>
+
+            <h3 class="en-text">Table 9: OpenClaw Tool Map</h3>
+            <h3 class="fr-text">Tableau 9: Cartographie des Outils OpenClaw</h3>
+            <p class="table-desc en-text">Tavily = Web Search. Fetch = URL Scraper. Filesystem = Local Access. E2B = Code Execution Sandbox.</p>
+            <p class="table-desc fr-text">Tavily = Recherche Web. Fetch = Scraper URL. Filesystem = Accès Local. E2B = Sandbox de Code.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th><span class="en-text">Detected Model</span><span class="fr-text">Modèle Détecté</span></th>
+                            <th><span class="en-text">Tools Confirmed via Probing</span><span class="fr-text">Outils Confirmés via Sondage</span></th>
+                            <th><span class="en-text">Status</span><span class="fr-text">Statut</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>a2a-6 / 10</td><td><span class="en-text">Unknown</span><span class="fr-text">Inconnu</span></td><td><span class="en-text">None</span><span class="fr-text">Aucun</span></td><td class="col-highlight t-inacc"><span class="en-text">Rate Limit</span><span class="fr-text">Limite de Taux</span></td></tr>
+                        <tr><td>a2a-7</td><td>gpt-5.3-codex</td><td>Fetch, Filesystem</td><td class="col-highlight t-acc"><span class="en-text">Functional</span><span class="fr-text">Fonctionnel</span></td></tr>
+                        <tr><td>a2a-8</td><td>gpt-5.2</td><td><span class="en-text">None Detected</span><span class="fr-text">Aucun Détecté</span></td><td class="col-highlight t-acc"><span class="en-text">Functional</span><span class="fr-text">Fonctionnel</span></td></tr>
+                        <tr><td>a2a-9</td><td>gpt-5.4</td><td>Tavily, Fetch, Filesystem</td><td class="col-highlight t-acc"><span class="en-text">Functional</span><span class="fr-text">Fonctionnel</span></td></tr>
+                        <tr><td>a2a-11 / 12</td><td>gpt-5.4 / claude</td><td>Filesystem, E2B (Partial)</td><td class="col-highlight t-err"><span class="en-text">Auth Failure</span><span class="fr-text">Échec Auth</span></td></tr>
+                        <tr><td>a2a-14</td><td>gpt-5.4-mini</td><td><span class="en-text">None</span><span class="fr-text">Aucun</span></td><td class="col-highlight t-acc"><span class="en-text">Reference (Coder)</span><span class="fr-text">Référence (Codeur)</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="discussion">
+            <h2 class="en-text">Discussion & Limits</h2>
+            <h2 class="fr-text">Discussion et Limites</h2>
+
+            <div class="en-text">
+                <h3>What the Results Teach Us About AI Agents</h3>
+                <ol>
+                    <li><strong>Reliability depends more on tools than the model:</strong> EP1 uses a recent model but fails entirely due to a simple provider configuration error. EP4 excels precisely because its web tools are correctly configured and its dual-critic architecture allows it to cross-check information.</li>
+                    <li><strong>Hallucinations do not disappear, they transform:</strong> Modern agents avoid pure factual hallucination on rare facts (preferring to admit ignorance). But insidious forms persist:
+                        <ul>
+                            <li><em>Logical:</em> EP3 and EP5 fail on fallacies due to structural inability to detect flawed reasoning.</li>
+                            <li><em>Temporal:</em> EP4 generates 28.6% Inaccurate on 2024-2026 news, replacing missing data with erroneous probabilistic extrapolations.</li>
+                        </ul>
+                    </li>
+                    <li><strong>An agent's internal architecture is decisive:</strong> EP3 and EP4 both use gpt-4.1. EP4 gets 100% on historical facts. EP3, with its poorly calibrated "skeptical critic", contests established evidences and generates "hallucinations of doubt."</li>
+                    <li><strong>Silence is a safeguard:</strong> "Unsupported" responses reveal healthy behavior. This must be explicitly framed in system prompts.</li>
+                </ol>
+
+                <h3>Limits of the Study</h3>
+                <p>The primary limit of our benchmarking is its <strong>manual nature</strong>. Hallucination testing and endpoint cartography were done via hand-launched queries. This limits repeatability and introduces human bias in verdict classification. The OpenClaw stack could not undergo the full test battery due to availability issues.</p>
+            </div>
+
+            <div class="fr-text">
+                <h3>Ce Que Les Résultats Nous Apprennent</h3>
+                <ol>
+                    <li><strong>La fiabilité dépend plus des outils que du modèle:</strong> EP1 échoue à cause d'une erreur de config. À l'inverse, EP4 excelle grâce à de bons outils et une architecture double-critic qui recoupe l'information.</li>
+                    <li><strong>Les hallucinations se transforment:</strong> L'invention factuelle pure recule. Mais deux formes insidieuses persistent :
+                        <ul>
+                            <li><em>Logique:</em> EP3 et EP5 échouent sur les sophismes par incapacité structurelle.</li>
+                            <li><em>Temporelle:</em> EP4 extrapole de manière erronée l'actualité au lieu d'admettre la limite de ses connaissances.</li>
+                        </ul>
+                    </li>
+                    <li><strong>L'architecture interne est déterminante:</strong> EP3 et EP4 partagent gpt-4.1. EP4 est excellent, tandis que le scepticisme mal calibré d'EP3 crée un doute artificiel sur des vérités connues.</li>
+                    <li><strong>Le silence est un garde-fou:</strong> Les réponses "Unsupported" révèlent un comportement sain (refus d'inventer).</li>
+                </ol>
+
+                <h3>Limites de L'Étude</h3>
+                <p>La limite principale est le caractère <strong>manuel</strong> de l'audit. Les tests à la main limitent la répétabilité et introduisent un biais humain dans la classification. La stack OpenClaw n'a pas pu être totalement évaluée suite à des soucis de disponibilité.</p>
+            </div>
+        </section>
+
+        <section id="conclusion">
+            <h2 class="en-text">Conclusion & Perspectives</h2>
+            <h2 class="fr-text">Conclusion et Perspectives</h2>
+
+            <div class="en-text">
+                <p>This project covered the entire value chain of an AI agent: from design (MCP/LangChain financial agent) to evaluation instrumentation, and finally auditing third-party infrastructure.</p>
+                <p>The most important methodological lesson is that <strong>manual testing does not scale</strong>. Identifying architectures, classifying verdicts, and tracking latencies by hand for 15 endpoints is time-consuming and poorly reproducible.</p>
+                <p><strong>DeepEval</strong> represents the natural solution. Integrating the Michelin endpoints into an automated CI/CD pipeline using DeepEval would transform this point-in-time audit into continuous monitoring. This is the necessary next step to secure the deployment of AI agents in an industrial context where models and APIs evolve constantly.</p>
+            </div>
+            <div class="fr-text">
+                <p>Ce projet nous a permis de couvrir toute la chaîne de valeur d'un agent IA: de la conception à l'évaluation, jusqu'à l'audit d'infrastructures tierces.</p>
+                <p>La leçon méthodologique majeure est que <strong>le test manuel ne passe pas à l'échelle</strong>. Identifier les architectures et classer les verdicts à la main pour 15 endpoints est chronophage et peu reproductible.</p>
+                <p><strong>DeepEval</strong> représente la solution naturelle. Intégrer les endpoints Michelin dans une pipeline CI/CD automatisée via DeepEval transformerait cet audit ponctuel en monitoring continu. C'est l'étape nécessaire pour sécuriser le déploiement des agents IA dans un contexte industriel en constante évolution.</p>
+            </div>
+        </section>
+
+        <section id="team">
+            <h2 class="en-text">Research Team</h2>
+            <h2 class="fr-text">Équipe de Recherche</h2>
+
+            <div class="team-intro">
+                <p class="en-text">This research was conducted as part of a Specialty Project (<em>Projet de Spécialité</em>) from February to May 2026, in partnership between Michelin and Grenoble INP - Ensimag. The research team consists of the following engineering students:</p>
+                <p class="fr-text">Cette recherche a été menée dans le cadre d'un <em>Projet de Spécialité</em> de février à mai 2026, en partenariat entre Michelin et Grenoble INP - Ensimag. L'équipe de recherche est composée des étudiants-ingénieurs suivants :</p>
+            </div>
+
+            <div class="team-list">
+                <div class="team-member">
+                    <div class="user-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <div class="team-details">
+                        <h4>Mohammed Mamoune Katni</h4>
+                    </div>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/mamoune-katni/" class="link-li" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                            LinkedIn
+                        </a>
+                        <a href="https://github.com/Neptune02-5" class="link-gh" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+
+                <div class="team-member">
+                    <div class="user-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <div class="team-details">
+                        <h4>Mohamed Trombati</h4>
+                    </div>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/mohamed-trombati-097929369/" class="link-li" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                            LinkedIn
+                        </a>
+                        <a href="https://github.com/malowx21" class="link-gh" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+
+                <div class="team-member">
+                    <div class="user-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <div class="team-details">
+                        <h4>Sam Hajj Assaf</h4>
+                    </div>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/samhajjassaf/" class="link-li" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                            LinkedIn
+                        </a>
+                        <a href="https://github.com/Sam-297" class="link-gh" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="en-text" style="margin-top: 2rem;">Acknowledgements</h3>
+            <h3 class="fr-text" style="margin-top: 2rem;">Remerciements</h3>
+
+            <div class="ack-card">
+                <p class="en-text">We would like to express our deep gratitude to <strong>Emilien Mottet</strong>, Software Engineer at Michelin, for his supervision as our tutor throughout this project. We particularly thank him for sharing his technical expertise, providing the testing environment (the 15 endpoints), and for his continuous guidance and valuable feedback from February to May 2026.</p>
+                <p class="fr-text">Nous tenons à exprimer notre profonde gratitude à <strong>Emilien Mottet</strong>, Ingénieur Logiciels chez Michelin, pour son encadrement en tant que tuteur tout au long de ce projet. Nous le remercions particulièrement pour le partage de son expertise technique, la mise à disposition de l'environnement de test (les 15 endpoints), ainsi que pour son suivi et ses conseils précieux de février à mai 2026.</p>
+
+                <a href="https://www.linkedin.com/in/emilien-mottet/" class="link-li" target="_blank" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; transition: background 0.2s;">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                    LinkedIn Profile
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Header Shrink Logic
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('main-header');
+            if (window.scrollY > 60) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Mobile Sidebar Toggle
+        const menuBtn = document.getElementById('menu-btn');
+        const overlay = document.querySelector('.sidebar-overlay');
+
+        menuBtn.addEventListener('click', () => {
+            document.body.classList.toggle('sidebar-open');
+        });
+        overlay.addEventListener('click', () => {
+            document.body.classList.remove('sidebar-open');
+        });
+
+        // Perfected Scrollspy Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('main > section');
+            const navLinks = document.querySelectorAll('.nav-menu li a');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (window.scrollY >= sectionTop - 150) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                if ((window.innerHeight + Math.round(window.scrollY)) >= document.body.offsetHeight - 50) {
+                    current = sections[sections.length - 1].getAttribute('id');
+                }
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            window.dispatchEvent(new Event('scroll'));
+        });
+    </script>
+</body>
+</html>
